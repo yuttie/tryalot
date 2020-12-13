@@ -12,6 +12,9 @@ import numpy as np
 import zstandard as zstd
 
 
+__version__ = '0.1.0'
+
+
 @contextlib.contextmanager
 def zstd_open_write(path, *args, **kwargs):
     with open(path, 'wb') as f:
