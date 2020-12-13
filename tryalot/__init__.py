@@ -12,7 +12,7 @@ import numpy as np
 import zstandard as zstd
 
 
-__version__ = '0.1.0'
+__version__ = '0.1.1'
 
 
 @contextlib.contextmanager
