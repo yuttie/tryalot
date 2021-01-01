@@ -43,7 +43,7 @@ def test_module_name_func():
     assert module_a.name == 'module_a'
 
 
-def test_simple_pipeline():
+def test_simple_pipeline(tmp_path):
     @tryalot.module(input=[], output=['p1_output1', 'p1_output2', 'p1_output3'])
     def process1():
         """This is the docstring for process1."""
@@ -61,7 +61,7 @@ def test_simple_pipeline():
             print('Executing process2')
             return '+'.join([x, y, z])
 
-    ctx = tryalot.Context()
+    ctx = tryalot.Context(tmp_path)
     ctx.register_modules(process1, Process2())
 
     @ctx.module(['p2_output'], ['p3_output'])
