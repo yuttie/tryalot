@@ -132,11 +132,11 @@ class Context:
             name,
             run_hash)
 
-    def has(self, name, run_hash):
+    def _has(self, name, run_hash):
         path = self._get_path(name, run_hash)
         return os.path.isfile(path + '.pickle.zst') or os.path.isfile(path + '.npz')
 
-    def get(self, name, run_hash, default=None):
+    def _get(self, name, run_hash, default=None):
         path = self._get_path(name, run_hash)
         if os.path.isfile(path + '.pickle.zst'):
             with zstd_open_read(path + '.pickle.zst') as f:
@@ -150,7 +150,7 @@ class Context:
         else:
             return default
 
-    def put(self, name, run_hash, data):
+    def _put(self, name, run_hash, data):
         path = self._get_path(name, run_hash)
         os.makedirs(os.path.dirname(path), exist_ok=True)
         if type(data) is np.ndarray:
@@ -180,15 +180,15 @@ class Context:
         h.update(_hash(tuple(sorted(kwargs.items()))).encode('utf-8'))
         run_hash = h.hexdigest()
         # Execute the module if needed
-        if all(self.has(name, run_hash) for name in module.output_names):
-            products = tuple(self.get(name, run_hash) for name in module.output_names)
+        if all(self._has(name, run_hash) for name in module.output_names):
+            products = tuple(self._get(name, run_hash) for name in module.output_names)
         else:
             products = module.execute(*args, **kwargs)
             if len(module.output_names) == 1:
                 products = (products, )
             # Store the products
             for name, product in zip(module.output_names, products):
-                self.put(name, run_hash, product)
+                self._put(name, run_hash, product)
         # Return the result with the hash
         return products, run_hash
 
