@@ -109,10 +109,10 @@ class Context:
         self._producer = {}
 
     def register_modules(self, *modules):
-        self._modules.update(modules)
         for mod in modules:
             if not isinstance(mod, Module):
                 warnings.warn(f'Module "{mod.name}" is not an instance of Module', RuntimeWarning)
+            self._modules.add(mod)
             for name in mod.output_names:
                 if name in self._producer:
                     raise f'Producer for "{name}" is already registered'
