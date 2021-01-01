@@ -51,4 +51,4 @@ def test_simple_pipeline():
     ctx.register_modules(process1, process2)
     ctx.run(process2)
 
-    assert ctx.get('p2_output', process2) == 'output1+output2+output3'
+    assert ctx.get('p2_output', {}) == 'output1+output2+output3'
