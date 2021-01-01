@@ -74,7 +74,7 @@ class Module(metaclass=ABCMeta):
         return self._output_names
 
     @property
-    def version(self):
+    def hash(self):
         return hashlib.sha1(inspect.getsource(self.execute).encode('utf-8')).hexdigest()
 
     @abstractmethod
@@ -120,7 +120,7 @@ class Context:
         return os.path.join(
             self._product_dir,
             name,
-            module.version)
+            module.hash)
 
     def has(self, name, module):
         path = self._get_path(name, module)
