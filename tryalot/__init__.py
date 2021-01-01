@@ -67,6 +67,10 @@ class Module(metaclass=ABCMeta):
         self._output_names = output_names
 
     @property
+    def name(self):
+        return self.__class__.__name__
+
+    @property
     def input_names(self):
         return self._input_names
 
@@ -88,6 +92,9 @@ def module(input, output):
         class Wrapper(Module):
             def __init__(self):
                 super().__init__(input, output)
+            @property
+            def name(self):
+                return f.__name__
             def execute(self, *args, **kwargs):
                 return f(*args, **kwargs)
         wrapper = Wrapper()
