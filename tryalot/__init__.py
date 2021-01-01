@@ -131,6 +131,7 @@ class Context:
         return os.path.join(
             self._product_dir,
             name,
+            module.name,
             module.hash)
 
     def has(self, name):
