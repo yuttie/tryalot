@@ -188,30 +188,3 @@ class Context:
         module = self._producer[name]
         self.run(name, module, condition)
         return self.get(name, condition)
-
-
-if __name__ == '__main__':
-    @module(input=[], output=['p1_output1', 'p1_output2', 'p1_output3'])
-    def process1():
-        """This is the docstring for process1."""
-        print('Executing process1')
-        return 'output1', 'output2', 'output3'
-
-    class Process2(Module):
-        """This is the docstring for process2."""
-        def __init__(self):
-            super().__init__(
-                ['p1_output1', 'p1_output2', 'p1_output3'],
-                ['p2_output'])
-
-        def execute(self, x, y, z):
-            print('Executing process2')
-            return x + y + z
-
-    process2 = Process2()
-
-    ctx = Context()
-    ctx.register_modules(process1, process2)
-    ctx.run(process2)
-
-    print(ctx.get('p2_output', process2))
