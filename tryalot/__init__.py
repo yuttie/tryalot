@@ -106,6 +106,14 @@ class Context:
             for name in mod.output_names:
                 self._producer[name] = mod
 
+    def module(self, input, output):
+        decorator = module(input, output)
+        def deco(f):
+            module = decorator(f)
+            self.register_modules(module)
+            return module
+        return deco
+
     def _get_path(self, name, module):
         return os.path.join(
             self._product_dir,
