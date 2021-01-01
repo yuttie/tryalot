@@ -126,20 +126,23 @@ class Context:
             return module
         return deco
 
-    def _get_path(self, name):
+    def _get_path(self, name, condition):
         module = self._producer[name]
+        args = condition.get(module.name)
+        args_hash = _hash(tuple(sorted(args.items())))
         return os.path.join(
             self._product_dir,
             name,
             module.name,
-            module.hash)
+            module.hash,
+            args_hash)
 
-    def has(self, name):
-        path = self._get_path(name)
+    def has(self, name, condition):
+        path = self._get_path(name, condition)
         return os.path.isfile(path + '.pickle.zst') or os.path.isfile(path + '.npz')
 
-    def get(self, name, default=None):
-        path = self._get_path(name)
+    def get(self, name, condition, default=None):
+        path = self._get_path(name, condition)
         if os.path.isfile(path + '.pickle.zst'):
             with zstd_open_read(path + '.pickle.zst') as f:
                 return pickle.load(f)
@@ -152,8 +155,8 @@ class Context:
         else:
             return default
 
-    def put(self, name, data):
-        path = self._get_path(name)
+    def put(self, name, data, condition):
+        path = self._get_path(name, condition)
         os.makedirs(os.path.dirname(path), exist_ok=True)
         if type(data) is np.ndarray:
             np.savez_compressed(path + '.npz', data)
@@ -161,24 +164,25 @@ class Context:
             with zstd_open_write(path + '.pickle.zst', level=19, threads=-1) as f:
                 pickle.dump(data, f, protocol=4)
 
-    def run(self, module):
-        if all(self.has(name) for name in module.output_names):
+    def run(self, module, condition={}):
+        if all(self.has(name, condition) for name in module.output_names):
             pass
         else:
             # Prepare input data for the module
             for name in module.input_names:
-                if not self.has(name):
+                if not self.has(name, condition):
                     # Recursively run the dependencies
                     producer = self._producer[name]
-                    self.run(producer)
+                    self.run(producer, condition)
             # Execute the module
-            args = [self.get(name) for name in module.input_names]
-            products = module.execute(*args)
+            args = [self.get(name, condition) for name in module.input_names]
+            kwargs = condition.get(module.name, {})
+            products = module.execute(*args, **kwargs)
             if len(module.output_names) == 1:
                 products = (products, )
             # Store the products
             for name, product in zip(module.output_names, products):
-                self.put(name, product)
+                self.put(name, product, condition)
 
 
 if __name__ == '__main__':
