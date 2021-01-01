@@ -11,7 +11,8 @@ def test_hashsink():
 
 
 def test_hash():
-    assert tryalot._hash(b'hello') == 'b03cce4f1c3106bf2b70609047096329fe36440e'
+    assert tryalot._hash(b'hello') == tryalot._hash(b'hello')
+    assert tryalot._hash(b'hello') != tryalot._hash(b'hell0')
 
 
 def test_decorator():
