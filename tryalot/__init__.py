@@ -126,23 +126,18 @@ class Context:
             return module
         return deco
 
-    def _get_path(self, name, condition):
-        module = self._producer[name]
-        args = condition.get(module.name, {})
-        args_hash = _hash(tuple(sorted(args.items())))
+    def _get_path(self, name, run_hash):
         return os.path.join(
             self._product_dir,
             name,
-            module.name,
-            module.hash,
-            args_hash)
+            run_hash)
 
-    def has(self, name, condition):
-        path = self._get_path(name, condition)
+    def has(self, name, run_hash):
+        path = self._get_path(name, run_hash)
         return os.path.isfile(path + '.pickle.zst') or os.path.isfile(path + '.npz')
 
-    def get(self, name, condition, default=None):
-        path = self._get_path(name, condition)
+    def get(self, name, run_hash, default=None):
+        path = self._get_path(name, run_hash)
         if os.path.isfile(path + '.pickle.zst'):
             with zstd_open_read(path + '.pickle.zst') as f:
                 return pickle.load(f)
@@ -155,8 +150,8 @@ class Context:
         else:
             return default
 
-    def put(self, name, data, condition):
-        path = self._get_path(name, condition)
+    def put(self, name, run_hash, data):
+        path = self._get_path(name, run_hash)
         os.makedirs(os.path.dirname(path), exist_ok=True)
         if type(data) is np.ndarray:
             np.savez_compressed(path + '.npz', data)
@@ -167,28 +162,40 @@ class Context:
     def run(self, module, condition=None):
         if condition is None:
             condition = {}
-        if all(self.has(name, condition) for name in module.output_names):
-            pass
+        # Run upstream modules
+        args = []
+        upstream_hashes = []
+        for name in module.input_names:
+            producer = self._producer[name]
+            i = producer.output_names.index(name)
+            upstream_products, upstream_hash = self.run(producer, condition)
+            args.append(upstream_products[i])
+            upstream_hashes.append(upstream_hash)
+        kwargs = condition.get(module.name, {})
+        # Compute a hash that identifies this run
+        h = hashlib.sha1()
+        h.update(hashlib.sha1(module.name.encode('utf-8')).digest())
+        h.update(hashlib.sha1(module.hash.encode('utf-8')).digest())
+        h.update(hashlib.sha1(''.join(upstream_hashes).encode('utf-8')).digest())
+        h.update(_hash(tuple(sorted(kwargs.items()))).encode('utf-8'))
+        run_hash = h.hexdigest()
+        # Execute the module if needed
+        if all(self.has(name, run_hash) for name in module.output_names):
+            products = tuple(self.get(name, run_hash) for name in module.output_names)
         else:
-            # Prepare input data for the module
-            for name in module.input_names:
-                if not self.has(name, condition):
-                    # Recursively run the dependencies
-                    producer = self._producer[name]
-                    self.run(producer, condition)
-            # Execute the module
-            args = [self.get(name, condition) for name in module.input_names]
-            kwargs = condition.get(module.name, {})
             products = module.execute(*args, **kwargs)
             if len(module.output_names) == 1:
                 products = (products, )
             # Store the products
             for name, product in zip(module.output_names, products):
-                self.put(name, product, condition)
+                self.put(name, run_hash, product)
+        # Return the result with the hash
+        return products, run_hash
 
     def compute(self, name, condition=None):
         if condition is None:
             condition = {}
         module = self._producer[name]
-        self.run(module, condition)
-        return self.get(name, condition)
+        i = module.output_names.index(name)
+        products, _ = self.run(module, condition)
+        return products[i]
