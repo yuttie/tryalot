@@ -50,7 +50,7 @@ def _hash(x):
     logger = logging.getLogger(f'{__name__}._hash')
     sink = HashSink()
     pickle.dump(x, sink, protocol=4)
-    return sink.hexdigest()
+    return sink.digest()
 
 
 def _hash_args(*args, **kwargs):
@@ -80,7 +80,7 @@ class Module(metaclass=ABCMeta):
 
     @property
     def hash(self):
-        return hashlib.sha1(inspect.getsource(self.execute).encode('utf-8')).hexdigest()
+        return hashlib.sha1(inspect.getsource(self.execute).encode('utf-8'))
 
     @abstractmethod
     def execute(self):
@@ -175,9 +175,9 @@ class Context:
         # Compute a hash that identifies this run
         h = hashlib.sha1()
         h.update(hashlib.sha1(module.name.encode('utf-8')).digest())
-        h.update(hashlib.sha1(module.hash.encode('utf-8')).digest())
+        h.update(module.hash.digest())
         h.update(hashlib.sha1(''.join(upstream_hashes).encode('utf-8')).digest())
-        h.update(_hash(tuple(sorted(kwargs.items()))).encode('utf-8'))
+        h.update(_hash(tuple(sorted(kwargs.items()))))
         run_hash = h.hexdigest()
         # Execute the module if needed
         if all(self._has(name, run_hash) for name in module.output_names):
