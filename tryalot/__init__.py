@@ -116,18 +116,19 @@ class Context:
             return module
         return deco
 
-    def _get_path(self, name, module):
+    def _get_path(self, name):
+        module = self._producer[name]
         return os.path.join(
             self._product_dir,
             name,
             module.hash)
 
-    def has(self, name, module):
-        path = self._get_path(name, module)
+    def has(self, name):
+        path = self._get_path(name)
         return os.path.isfile(path + '.pickle.zst') or os.path.isfile(path + '.npz')
 
-    def get(self, name, module):
-        path = self._get_path(name, module)
+    def get(self, name):
+        path = self._get_path(name)
         if os.path.isfile(path + '.pickle.zst'):
             with zstd_open_read(path + '.pickle.zst') as f:
                 return pickle.load(f)
@@ -140,8 +141,8 @@ class Context:
         else:
             raise RuntimeError(f'Could not found data: "{name}"')
 
-    def put(self, name, module, data):
-        path = self._get_path(name, module)
+    def put(self, name, data):
+        path = self._get_path(name)
         os.makedirs(os.path.dirname(path), exist_ok=True)
         if type(data) is np.ndarray:
             np.savez_compressed(path + '.npz', data)
@@ -150,7 +151,7 @@ class Context:
                 pickle.dump(data, f, protocol=4)
 
     def run(self, module):
-        if all(self.has(name, module) for name in module.output_names):
+        if all(self.has(name) for name in module.output_names):
             pass
         else:
             # Prepare input data for the module
