@@ -61,10 +61,11 @@ def test_simple_pipeline():
             print('Executing process2')
             return '+'.join([x, y, z])
 
-    process2 = Process2()
-
     ctx = tryalot.Context()
-    ctx.register_modules(process1, process2)
-    ctx.run(process2)
+    ctx.register_modules(process1, Process2())
 
-    assert ctx.get('p2_output', {}) == 'output1+output2+output3'
+    @ctx.module(['p2_output'], ['p3_output'])
+    def process3(w):
+        return w + '|' + w
+
+    assert ctx.compute('p3_output') == 'output1+output2+output3|output1+output2+output3'
