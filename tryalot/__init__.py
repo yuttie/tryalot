@@ -60,6 +60,40 @@ def _hash_args(*args, **kwargs):
     return _hash(normalized_args)
 
 
+class Module(metaclass=ABCMeta):
+    def __init__(self, input_names, output_names):
+        self._input_names = input_names
+        self._output_names = output_names
+
+    @property
+    def input_names(self):
+        return self._input_names
+
+    @property
+    def output_names(self):
+        return self._output_names
+
+    @property
+    def version(self):
+        return hashlib.sha1(inspect.getsource(self.execute).encode('utf-8')).hexdigest()
+
+    @abstractmethod
+    def execute(self):
+        pass
+
+
+def module(input, output):
+    def decorator(f):
+        class Wrapper(Module):
+            def __init__(self):
+                super().__init__(input, output)
+            def execute(self, *args, **kwargs):
+                return f(*args, **kwargs)
+        wrapper = Wrapper()
+        return functools.wraps(f)(wrapper)
+    return decorator
+
+
 class Context:
     def __init__(self, product_dir='.products'):
         self._product_dir = product_dir
@@ -123,40 +157,6 @@ class Context:
             # Store the products
             for name, product in zip(module.output_names, products):
                 self.put(name, module, product)
-
-
-class Module(metaclass=ABCMeta):
-    def __init__(self, input_names, output_names):
-        self._input_names = input_names
-        self._output_names = output_names
-
-    @property
-    def input_names(self):
-        return self._input_names
-
-    @property
-    def output_names(self):
-        return self._output_names
-
-    @property
-    def version(self):
-        return hashlib.sha1(inspect.getsource(self.execute).encode('utf-8')).hexdigest()
-
-    @abstractmethod
-    def execute(self):
-        pass
-
-
-def module(input, output):
-    def decorator(f):
-        class Wrapper(Module):
-            def __init__(self):
-                super().__init__(input, output)
-            def execute(self, *args, **kwargs):
-                return f(*args, **kwargs)
-        wrapper = Wrapper()
-        return functools.wraps(f)(wrapper)
-    return decorator
 
 
 if __name__ == '__main__':
