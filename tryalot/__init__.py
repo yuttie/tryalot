@@ -168,17 +168,17 @@ class Context:
             # Prepare input data for the module
             for name in module.input_names:
                 producer = self._producer[name]
-                if not self.has(name, producer):
+                if not self.has(name):
                     # Recursively run the necessary modules
                     self.run(producer)
             # Execute the module
-            args = [self.get(name, self._producer[name]) for name in module.input_names]
+            args = [self.get(name) for name in module.input_names]
             products = module.execute(*args)
             if len(module.output_names) == 1:
                 products = (products, )
             # Store the products
             for name, product in zip(module.output_names, products):
-                self.put(name, module, product)
+                self.put(name, product)
 
 
 if __name__ == '__main__':
