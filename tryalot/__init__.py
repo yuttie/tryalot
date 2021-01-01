@@ -104,6 +104,8 @@ class Context:
         self._modules.update(modules)
         for mod in modules:
             for name in mod.output_names:
+                if name in self._producer:
+                    raise f'Producer for "{name}" is already registered'
                 self._producer[name] = mod
 
     def module(self, input, output):
