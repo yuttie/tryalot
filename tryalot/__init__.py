@@ -33,8 +33,8 @@ def zstd_open_read(path, *args, **kwargs):
 
 
 class HashSink:
-    def __init__(self, h=hashlib.sha1()):
-        self._h = h
+    def __init__(self):
+        self._h = hashlib.sha1()
 
     def write(self, b: bytes):
         self._h.update(b)
