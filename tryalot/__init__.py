@@ -7,6 +7,7 @@ import io
 import logging
 import os
 import pickle
+import warnings
 
 import numpy as np
 import zstandard as zstd
@@ -103,6 +104,8 @@ class Context:
     def register_modules(self, *modules):
         self._modules.update(modules)
         for mod in modules:
+            if not isinstance(mod, Module):
+                warnings.warn('Module is not an instance of Module', RuntimeWarning)
             for name in mod.output_names:
                 if name in self._producer:
                     raise f'Producer for "{name}" is already registered'
