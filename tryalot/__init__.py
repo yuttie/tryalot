@@ -164,7 +164,9 @@ class Context:
             with zstd_open_write(path + '.pickle.zst', level=19, threads=-1) as f:
                 pickle.dump(data, f, protocol=4)
 
-    def run(self, module, condition={}):
+    def run(self, module, condition=None):
+        if condition is None:
+            condition = {}
         if all(self.has(name, condition) for name in module.output_names):
             pass
         else:
@@ -184,7 +186,9 @@ class Context:
             for name, product in zip(module.output_names, products):
                 self.put(name, product, condition)
 
-    def compute(self, name, condition={}):
+    def compute(self, name, condition=None):
+        if condition is None:
+            condition = {}
         module = self._producer[name]
         self.run(name, module, condition)
         return self.get(name, condition)
