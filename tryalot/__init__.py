@@ -128,7 +128,7 @@ class Context:
 
     def _get_path(self, name, condition):
         module = self._producer[name]
-        args = condition.get(module.name)
+        args = condition.get(module.name, {})
         args_hash = _hash(tuple(sorted(args.items())))
         return os.path.join(
             self._product_dir,
