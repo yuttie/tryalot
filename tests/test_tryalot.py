@@ -27,6 +27,22 @@ def test_decorator():
     assert process.output_names == ['output1', 'output2', 'output3']
 
 
+def test_module_name_class():
+    class ModuleA(tryalot.Module):
+        def __init__(self):
+            super().__init__([], [])
+        def execute(self):
+            pass
+    assert ModuleA().name == 'ModuleA'
+
+
+def test_module_name_func():
+    @tryalot.module([], [])
+    def module_a():
+        pass
+    assert module_a.name == 'module_a'
+
+
 def test_simple_pipeline():
     @tryalot.module(input=[], output=['p1_output1', 'p1_output2', 'p1_output3'])
     def process1():
