@@ -184,6 +184,11 @@ class Context:
             for name, product in zip(module.output_names, products):
                 self.put(name, product, condition)
 
+    def compute(self, name, condition={}):
+        module = self._producer[name]
+        self.run(name, module, condition)
+        return self.get(name, condition)
+
 
 if __name__ == '__main__':
     @module(input=[], output=['p1_output1', 'p1_output2', 'p1_output3'])
