@@ -167,9 +167,9 @@ class Context:
         else:
             # Prepare input data for the module
             for name in module.input_names:
-                producer = self._producer[name]
                 if not self.has(name):
-                    # Recursively run the necessary modules
+                    # Recursively run the dependencies
+                    producer = self._producer[name]
                     self.run(producer)
             # Execute the module
             args = [self.get(name) for name in module.input_names]
