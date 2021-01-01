@@ -61,8 +61,8 @@ def _hash_args(*args, **kwargs):
 
 
 class Context:
-    def __init__(self):
-        self._product_dir = '.products'
+    def __init__(self, product_dir='.products'):
+        self._product_dir = product_dir
         self._modules = set()
         self._producer = {}
 
