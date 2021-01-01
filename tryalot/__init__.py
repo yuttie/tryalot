@@ -138,7 +138,7 @@ class Context:
         path = self._get_path(name)
         return os.path.isfile(path + '.pickle.zst') or os.path.isfile(path + '.npz')
 
-    def get(self, name):
+    def get(self, name, default=None):
         path = self._get_path(name)
         if os.path.isfile(path + '.pickle.zst'):
             with zstd_open_read(path + '.pickle.zst') as f:
@@ -150,7 +150,7 @@ class Context:
                 else:
                     raise RuntimeError(f'Multiple files were found in npz: {path + ".npz"}')
         else:
-            raise RuntimeError(f'Could not found data: "{name}"')
+            return default
 
     def put(self, name, data):
         path = self._get_path(name)
