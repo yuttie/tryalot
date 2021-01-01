@@ -1,6 +1,15 @@
 import tryalot
 
 
+def test_hashsink():
+    sink1 = tryalot.HashSink()
+    sink1.write(b'hello')
+    assert sink1.hexdigest() == sink1.hexdigest()
+    sink2 = tryalot.HashSink()
+    sink2.write(b'hello')
+    assert sink1.hexdigest() == sink2.hexdigest()
+
+
 def test_hash():
     assert tryalot._hash(b'hello') == 'b03cce4f1c3106bf2b70609047096329fe36440e'
 
