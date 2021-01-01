@@ -190,5 +190,5 @@ class Context:
         if condition is None:
             condition = {}
         module = self._producer[name]
-        self.run(name, module, condition)
+        self.run(module, condition)
         return self.get(name, condition)
