@@ -1,6 +1,47 @@
 import tryalot
 
 
+def test_zstd_open_short(tmp_path):
+    import os.path
+    data = b'data'
+    path = os.path.join(tmp_path, 'file.zst')
+    with tryalot.zstd_open_write(path) as f:
+        f.write(data)
+    assert os.path.isfile(path)
+    with tryalot.zstd_open_read(path) as f:
+        read_data = f.read()
+    assert read_data == data
+
+
+def test_zstd_open_long_single(tmp_path):
+    import os
+    import os.path
+    data = os.urandom(1 * 1024 * 1024)
+    path = os.path.join(tmp_path, 'file.zst')
+    with tryalot.zstd_open_write(path) as f:
+        f.write(data)
+    assert os.path.isfile(path)
+    with tryalot.zstd_open_read(path) as f:
+        read_data = f.read()
+    assert read_data == data
+
+
+def test_zstd_open_long_multi(tmp_path):
+    import os
+    import os.path
+    data = os.urandom(1 * 1024 * 1024)
+    path = os.path.join(tmp_path, 'file.zst')
+    with tryalot.zstd_open_write(path) as f:
+        for i in range(1024):
+            start = 1024 * i
+            end = 1024 * (i + 1)
+            f.write(data[start:end])
+    assert os.path.isfile(path)
+    with tryalot.zstd_open_read(path) as f:
+        read_data = f.read()
+    assert read_data == data
+
+
 def test_hashsink():
     sink1 = tryalot.HashSink()
     sink1.write(b'hello')
