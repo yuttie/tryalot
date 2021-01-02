@@ -47,7 +47,6 @@ class HashSink:
 
 
 def _hash(x):
-    logger = logging.getLogger(f'{__name__}._hash')
     sink = HashSink()
     pickle.dump(x, sink, protocol=4)
     return sink.digest()
