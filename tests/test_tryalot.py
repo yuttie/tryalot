@@ -120,7 +120,7 @@ def test_cashing(tmp_path):
         return time.perf_counter_ns()
 
     @ctx.module(input=['p2_output'], output=['p3_output'])
-    def process2(x):
+    def process3(x):
         print('Executing process3')
         return time.perf_counter_ns()
 
