@@ -52,6 +52,8 @@ def test_hashsink():
 
 
 def test_hash():
+    assert tryalot._hash(1) == tryalot._hash(1)
+    assert tryalot._hash(1) != tryalot._hash('1')
     assert tryalot._hash(b'hello') == tryalot._hash(b'hello')
     assert tryalot._hash(b'hello') != tryalot._hash(b'hell0')
 
