@@ -128,3 +128,34 @@ def test_cashing(tmp_path):
     second_p3 = ctx.compute('p3_output')
 
     assert first_p3 == second_p3
+
+
+def test_cashing_with_condition(tmp_path):
+    import time
+
+    ctx = tryalot.Context(tmp_path)
+
+    @ctx.module(input=[], output=['p1_output'])
+    def process1(*, a):
+        """This is the docstring for process1."""
+        print('Executing process1')
+        return time.perf_counter_ns()
+
+    @ctx.module(input=['p1_output'], output=['p2_output'])
+    def process2(x, *, a):
+        print('Executing process2')
+        return time.perf_counter_ns()
+
+    @ctx.module(input=['p2_output'], output=['p3_output'])
+    def process3(x):
+        print('Executing process3')
+        return time.perf_counter_ns()
+
+    first_p3 = ctx.compute('p3_output', dict(process1=dict(a=0), process2=dict(a=0)))
+    second_p3 = ctx.compute('p3_output', dict(process1=dict(a=1), process2=dict(a=0)))
+    third_p3 = ctx.compute('p3_output', dict(process1=dict(a=0), process2=dict(a=1)))
+    forth_p3 = ctx.compute('p3_output', dict(process1=dict(a=1), process2=dict(a=1)))
+    fifth_p3 = ctx.compute('p3_output', dict(process1=dict(a=0), process2=dict(a=0)))
+
+    assert first_p3 == fifth_p3
+    assert first_p3 < second_p3 < third_p3 < forth_p3
