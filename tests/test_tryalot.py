@@ -112,17 +112,17 @@ def test_cashing(tmp_path):
     def process1():
         """This is the docstring for process1."""
         print('Executing process1')
-        return time.monotonic_ns()
+        return time.perf_counter_ns()
 
     @ctx.module(input=['p1_output'], output=['p2_output'])
     def process2(x):
         print('Executing process2')
-        return time.monotonic_ns()
+        return time.perf_counter_ns()
 
     @ctx.module(input=['p2_output'], output=['p3_output'])
     def process2(x):
         print('Executing process3')
-        return time.monotonic_ns()
+        return time.perf_counter_ns()
 
     first_p3 = ctx.compute('p3_output')
     second_p3 = ctx.compute('p3_output')
