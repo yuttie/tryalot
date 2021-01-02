@@ -43,7 +43,7 @@ def test_module_name_func():
     assert module_a.name == 'module_a'
 
 
-def test_simple_pipeline(tmp_path):
+def test_pipeline(tmp_path):
     @tryalot.module(input=[], output=['p1_output1', 'p1_output2', 'p1_output3'])
     def process1():
         """This is the docstring for process1."""
@@ -71,7 +71,7 @@ def test_simple_pipeline(tmp_path):
     assert ctx.compute('p3_output') == 'output1+output2+output3|output1+output2+output3'
 
 
-def test_simple_pipeline_with_condition(tmp_path):
+def test_pipeline_with_condition(tmp_path):
     @tryalot.module(input=[], output=['p1_output1', 'p1_output2', 'p1_output3'])
     def process1(*, upper_case):
         """This is the docstring for process1."""
