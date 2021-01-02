@@ -53,14 +53,6 @@ def _hash(x):
     return sink.digest()
 
 
-def _hash_args(*args, **kwargs):
-    logger = logging.getLogger(f'{__name__}._hash_args')
-    normalized_args = (args, tuple(sorted(kwargs.items())))
-    logger.debug('hash(args) = %s', _hash(normalized_args[0]))
-    logger.debug('hash(kwargs) = %s', _hash(normalized_args[1]))
-    return _hash(normalized_args)
-
-
 class Module(metaclass=ABCMeta):
     def __init__(self, input_names, output_names):
         self._input_names = input_names
