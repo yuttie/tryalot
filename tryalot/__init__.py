@@ -145,10 +145,22 @@ class Context:
         path = self._get_path(name, run_hash)
         os.makedirs(os.path.dirname(path), exist_ok=True)
         if type(data) is np.ndarray:
-            np.savez_compressed(path + '.npz', data)
+            path = path + '.npz'
+            try:
+                np.savez_compressed(path, data)
+            except Exception as e:
+                if os.path.exists(path):
+                    os.remove(path)
+                raise e
         else:
-            with zstd_open_write(path + '.pickle.zst', level=19, threads=-1) as f:
-                pickle.dump(data, f, protocol=4)
+            path = path + '.pickle.zst'
+            try:
+                with zstd_open_write(path, level=19, threads=-1) as f:
+                    pickle.dump(data, f, protocol=4)
+            except Exception as e:
+                if os.path.exists(path):
+                    os.remove(path)
+                raise e
 
     def run(self, module, condition=None):
         if condition is None:
