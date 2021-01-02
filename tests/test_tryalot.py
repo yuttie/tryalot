@@ -101,3 +101,30 @@ def test_pipeline_with_condition(tmp_path):
 
     assert ctx.compute('p3_output', dict(process1=dict(upper_case=True), Process2=dict(glue='--'))) == 'OUTPUT1--OUTPUT2--OUTPUT3|OUTPUT1--OUTPUT2--OUTPUT3'
     assert ctx.compute('p3_output', dict(process1=dict(upper_case=False), Process2=dict(glue='++'))) == 'output1++output2++output3|output1++output2++output3'
+
+
+def test_cashing(tmp_path):
+    import time
+
+    ctx = tryalot.Context(tmp_path)
+
+    @ctx.module(input=[], output=['p1_output'])
+    def process1():
+        """This is the docstring for process1."""
+        print('Executing process1')
+        return time.monotonic_ns()
+
+    @ctx.module(input=['p1_output'], output=['p2_output'])
+    def process2(x):
+        print('Executing process2')
+        return time.monotonic_ns()
+
+    @ctx.module(input=['p2_output'], output=['p3_output'])
+    def process2(x):
+        print('Executing process3')
+        return time.monotonic_ns()
+
+    first_p3 = ctx.compute('p3_output')
+    second_p3 = ctx.compute('p3_output')
+
+    assert first_p3 == second_p3
