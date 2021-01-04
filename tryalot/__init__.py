@@ -125,8 +125,8 @@ class Context:
     def _get_path(self, name, run_hash):
         return os.path.join(
             self._product_dir,
-            name,
-            run_hash)
+            run_hash,
+            name)
 
     def _has(self, name, run_hash):
         path = self._get_path(name, run_hash)
