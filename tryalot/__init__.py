@@ -71,7 +71,7 @@ class Module(metaclass=ABCMeta):
 
     @property
     def hash(self):
-        return hashlib.sha1(inspect.getsource(self.execute).encode('utf-8'))
+        return hashlib.sha1(self.execute.__code__.co_code)
 
     @abstractmethod
     def execute(self):
