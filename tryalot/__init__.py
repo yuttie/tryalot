@@ -16,6 +16,9 @@ import zstandard as zstd
 __version__ = '0.2.3'
 
 
+_logger = logging.getLogger(__name__)
+
+
 @contextlib.contextmanager
 def zstd_open_write(path, *args, **kwargs):
     with open(path, 'wb') as f:
@@ -98,6 +101,7 @@ class Context:
         self._product_dir = product_dir
         self._modules = set()
         self._producer = {}
+        _logger.info(f'Using "{self._product_dir}" as a product repository')
 
     def register_modules(self, *modules):
         for mod in modules:
@@ -108,6 +112,7 @@ class Context:
                 if name in self._producer:
                     warnings.warn(f'Producer for "{name}" is already registered')
                 self._producer[name] = mod
+            _logger.info(f'Module "{mod.name}" has been registered')
 
     def module(self, input, output):
         decorator = module(input, output)
@@ -161,8 +166,10 @@ class Context:
                 if os.path.exists(path):
                     os.remove(path)
                 raise e
+        _logger.info(f'Product has been saved as "{path}"')
 
     def run(self, module, condition=None):
+        _logger.info(f'Running module "{module.name}"')
         if condition is None:
             condition = {}
         # Run upstream modules
@@ -184,8 +191,10 @@ class Context:
         run_hash = h.hexdigest()
         # Execute the module if needed
         if all(self._has(name, run_hash) for name in module.output_names):
+            _logger.info(f'Found cached products of module "{module.name}", skipping execution')
             products = tuple(self._get(name, run_hash) for name in module.output_names)
         else:
+            _logger.info(f'Executing module "{module.name}"')
             products = module.execute(*args, **kwargs)
             if len(module.output_names) == 1:
                 products = (products, )
