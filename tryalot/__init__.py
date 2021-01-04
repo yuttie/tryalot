@@ -105,6 +105,8 @@ class Context:
                 warnings.warn(f'Module "{mod.name}" is not an instance of Module', RuntimeWarning)
             self._modules.add(mod)
             for name in mod.output_names:
+                if name in self._producer:
+                    warnings.warn(f'Producer for "{name}" is already registered')
                 self._producer[name] = mod
 
     def module(self, input, output):
