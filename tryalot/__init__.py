@@ -168,46 +168,60 @@ class Context:
                 raise e
         _logger.info(f'Product has been saved as "{path}"')
 
-    def run(self, module, condition=None):
-        _logger.info(f'Running module "{module.name}"')
+    def get_runhash(self, module, condition=None):
         if condition is None:
             condition = {}
-        # Run upstream modules
-        args = []
+        # Get runhashes from upstream modules
         upstream_hashes = []
         for name in module.input_names:
             producer = self._producer[name]
-            i = producer.output_names.index(name)
-            upstream_products, upstream_hash = self.run(producer, condition)
-            args.append(upstream_products[i])
+            upstream_hash = self.get_runhash(producer, condition)
             upstream_hashes.append(upstream_hash)
+        # Get keyword arguments from condition for module
         kwargs = condition.get(module.name, {})
-        # Compute a hash that identifies this run
+        # Compute runhash that identifies this run
         h = hashlib.sha1()
         h.update(hashlib.sha1(module.name.encode('utf-8')).digest())
         h.update(module.hash.digest())
         h.update(hashlib.sha1(''.join(upstream_hashes).encode('utf-8')).digest())
         h.update(_hash(tuple(sorted(kwargs.items()))))
-        run_hash = h.hexdigest()
-        # Execute the module if needed
-        if all(self._has(name, run_hash) for name in module.output_names):
+        runhash = h.hexdigest()
+        # Return runhash
+        return runhash
+
+    def run(self, module, condition=None):
+        _logger.info(f'Running module "{module.name}"')
+        if condition is None:
+            condition = {}
+        # Execute module if needed
+        runhash = self.get_runhash(module, condition)
+        if all(self._has(name, runhash) for name in module.output_names):
             _logger.info(f'Found cached products of module "{module.name}", skipping execution')
-            products = tuple(self._get(name, run_hash) for name in module.output_names)
+            products = tuple(self._get(name, runhash) for name in module.output_names)
         else:
+            # Prepare inputs
+            args = []
+            for name in module.input_names:
+                producer = self._producer[name]
+                i = producer.output_names.index(name)
+                upstream_products = self.run(producer, condition)
+                args.append(upstream_products[i])
+            kwargs = condition.get(module.name, {})
+            # Execute module
             _logger.info(f'Executing module "{module.name}"')
             products = module.execute(*args, **kwargs)
             if len(module.output_names) == 1:
                 products = (products, )
             # Store the products
             for name, product in zip(module.output_names, products):
-                self._put(name, run_hash, product)
-        # Return the result with the hash
-        return products, run_hash
+                self._put(name, runhash, product)
+        # Return products
+        return products
 
     def compute(self, name, condition=None):
         if condition is None:
             condition = {}
         module = self._producer[name]
         i = module.output_names.index(name)
-        products, _ = self.run(module, condition)
+        products = self.run(module, condition)
         return products[i]
