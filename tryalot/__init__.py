@@ -5,7 +5,7 @@ import hashlib
 import inspect
 import io
 import logging
-import os
+from pathlib import Path
 import pickle
 import warnings
 
@@ -123,22 +123,26 @@ class Context:
         return deco
 
     def _get_path(self, name, runhash):
-        return os.path.join(
+        return Path(
             self._product_dir,
             runhash,
             name)
 
     def _has(self, name, runhash):
         path = self._get_path(name, runhash)
-        return os.path.isfile(path + '.pickle.zst') or os.path.isfile(path + '.npz')
+        parent = path.parent
+        name = path.name
+        return Path(parent, name + '.pickle.zst').is_file() or Path(parent, name + '.npz').is_file()
 
     def _get(self, name, runhash, default=None):
         path = self._get_path(name, runhash)
-        if os.path.isfile(path + '.pickle.zst'):
-            with zstd_open_read(path + '.pickle.zst') as f:
+        if Path(path.parent, path.name + '.pickle.zst').is_file():
+            path = Path(path.parent, path.name + '.pickle.zst')
+            with zstd_open_read(path) as f:
                 return pickle.load(f)
-        elif os.path.isfile(path + '.npz'):
-            with np.load(path + '.npz') as npz:
+        elif Path(path.parent, path.name + '.npz').is_file():
+            path = Path(path.parent, path.name + '.npz')
+            with np.load(path) as npz:
                 if len(npz.files) == 1:
                     return npz[npz.files[0]]
                 else:
@@ -148,23 +152,23 @@ class Context:
 
     def _put(self, name, runhash, data):
         path = self._get_path(name, runhash)
-        os.makedirs(os.path.dirname(path), exist_ok=True)
+        path.parent.mkdir(parents=True, exist_ok=True)
         if type(data) is np.ndarray:
-            path = path + '.npz'
+            path = Path(path.parent, path.name + '.npz')
             try:
                 np.savez_compressed(path, data)
             except Exception as e:
-                if os.path.exists(path):
-                    os.remove(path)
+                if path.exists():
+                    path.unlink()
                 raise e
         else:
-            path = path + '.pickle.zst'
+            path = Path(path.parent, path.name + '.pickle.zst')
             try:
                 with zstd_open_write(path, level=19, threads=-1) as f:
                     pickle.dump(data, f, protocol=4)
             except Exception as e:
-                if os.path.exists(path):
-                    os.remove(path)
+                if path.exists():
+                    path.unlink()
                 raise e
         _logger.info(f'Product has been saved as "{path}"')
 
