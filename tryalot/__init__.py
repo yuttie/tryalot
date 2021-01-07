@@ -122,18 +122,18 @@ class Context:
             return module
         return deco
 
-    def _get_path(self, name, run_hash):
+    def _get_path(self, name, runhash):
         return os.path.join(
             self._product_dir,
-            run_hash,
+            runhash,
             name)
 
-    def _has(self, name, run_hash):
-        path = self._get_path(name, run_hash)
+    def _has(self, name, runhash):
+        path = self._get_path(name, runhash)
         return os.path.isfile(path + '.pickle.zst') or os.path.isfile(path + '.npz')
 
-    def _get(self, name, run_hash, default=None):
-        path = self._get_path(name, run_hash)
+    def _get(self, name, runhash, default=None):
+        path = self._get_path(name, runhash)
         if os.path.isfile(path + '.pickle.zst'):
             with zstd_open_read(path + '.pickle.zst') as f:
                 return pickle.load(f)
@@ -146,8 +146,8 @@ class Context:
         else:
             return default
 
-    def _put(self, name, run_hash, data):
-        path = self._get_path(name, run_hash)
+    def _put(self, name, runhash, data):
+        path = self._get_path(name, runhash)
         os.makedirs(os.path.dirname(path), exist_ok=True)
         if type(data) is np.ndarray:
             path = path + '.npz'
