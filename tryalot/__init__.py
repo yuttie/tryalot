@@ -7,9 +7,9 @@ import io
 import logging
 from pathlib import Path
 import pickle
+from typing import Any, List
 import warnings
 
-import numpy as np
 import zstandard as zstd
 
 
@@ -96,7 +96,47 @@ def module(input, output):
     return decorator
 
 
+class ProductType:
+    @staticmethod
+    def file_ext() -> str:
+        pass
+
+    @staticmethod
+    def match(data: Any) -> bool:
+        pass
+
+    @staticmethod
+    def load(path: Path) -> Any:
+        pass
+
+    @staticmethod
+    def dump(data: Any, path: Path):
+        pass
+
+
+class AnyProductType(ProductType):
+    @staticmethod
+    def file_ext() -> str:
+        return '.pickle.zst'
+
+    @staticmethod
+    def match(data: Any) -> bool:
+        return True
+
+    @staticmethod
+    def load(path: Path) -> Any:
+        with zstd_open_read(path) as f:
+            return pickle.load(f)
+
+    @staticmethod
+    def dump(data: Any, path: Path):
+        with zstd_open_write(path, level=19, threads=-1) as f:
+            pickle.dump(data, f, protocol=4)
+
+
 class Context:
+    product_types: List[ProductType] = [AnyProductType]
+
     def __init__(self, product_dir='.products'):
         self._product_dir = product_dir
         self._modules = set()
@@ -130,46 +170,34 @@ class Context:
 
     def _has(self, name, runhash):
         path = self._get_path(name, runhash)
-        parent = path.parent
-        name = path.name
-        return Path(parent, name + '.pickle.zst').is_file() or Path(parent, name + '.npz').is_file()
+        for product_type in self.product_types:
+            candidate_path = Path(path.parent, path.name + product_type.file_ext())
+            if candidate_path.is_file():
+                return True
+        return False
 
     def _get(self, name, runhash, default=None):
         path = self._get_path(name, runhash)
-        if Path(path.parent, path.name + '.pickle.zst').is_file():
-            path = Path(path.parent, path.name + '.pickle.zst')
-            with zstd_open_read(path) as f:
-                return pickle.load(f)
-        elif Path(path.parent, path.name + '.npz').is_file():
-            path = Path(path.parent, path.name + '.npz')
-            with np.load(path) as npz:
-                if len(npz.files) == 1:
-                    return npz[npz.files[0]]
-                else:
-                    raise RuntimeError(f'Multiple files were found in npz: {path + ".npz"}')
-        else:
-            return default
+        for product_type in self.product_types:
+            candidate_path = Path(path.parent, path.name + product_type.file_ext())
+            if candidate_path.is_file():
+                path = candidate_path
+                return product_type.load(path)
+        return default
 
     def _put(self, name, runhash, data):
         path = self._get_path(name, runhash)
         path.parent.mkdir(parents=True, exist_ok=True)
-        if type(data) is np.ndarray:
-            path = Path(path.parent, path.name + '.npz')
-            try:
-                np.savez_compressed(path, data)
-            except Exception as e:
-                if path.exists():
-                    path.unlink()
-                raise e
-        else:
-            path = Path(path.parent, path.name + '.pickle.zst')
-            try:
-                with zstd_open_write(path, level=19, threads=-1) as f:
-                    pickle.dump(data, f, protocol=4)
-            except Exception as e:
-                if path.exists():
-                    path.unlink()
-                raise e
+        for product_type in self.product_types:
+            if product_type.match(data):
+                path = Path(path.parent, path.name + product_type.file_ext())
+                try:
+                    product_type.dump(data, path)
+                except Exception as e:
+                    if path.exists():
+                        path.unlink()
+                    raise e
+                break
         _logger.info(f'Product has been saved as "{path}"')
 
     def get_runhash(self, module, condition=None):
@@ -229,3 +257,33 @@ class Context:
         i = module.output_names.index(name)
         products = self.run(module, condition)
         return products[i]
+
+
+# Additional support for library-specific product types
+try:
+    import numpy as np
+
+    class NumpyNdarrayProductType(ProductType):
+        @staticmethod
+        def file_ext() -> str:
+            return '.npz'
+
+        @staticmethod
+        def match(data: Any) -> bool:
+            return type(data) is np.ndarray
+
+        @staticmethod
+        def load(path: Path) -> Any:
+            with np.load(path) as npz:
+                if len(npz.files) == 1:
+                    return npz[npz.files[0]]
+                else:
+                    raise RuntimeError(f'Multiple files were found in npz: {path}')
+
+        @staticmethod
+        def dump(data: Any, path: Path):
+            np.savez_compressed(path, data)
+
+    Context.product_types.insert(0, NumpyNdarrayProductType)
+except ModuleNotFoundError:
+    pass
