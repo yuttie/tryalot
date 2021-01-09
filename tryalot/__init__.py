@@ -330,13 +330,11 @@ try:
 
         @staticmethod
         def load(path: Path) -> Any:
-            with zstd_open_read(path) as f:
-                return torch.load(f)
+            return torch.load(path)
 
         @staticmethod
         def dump(data: Any, path: Path):
-            with zstd_open_write(path, level=19, threads=-1) as f:
-                torch.save(data, f, pickle_protocol=4)
+            torch.save(data, path, pickle_protocol=4)
 
     Context.product_types.insert(-1, TorchTensorProductType)
 except ModuleNotFoundError:
