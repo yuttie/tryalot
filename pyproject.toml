@@ -16,6 +16,7 @@ zstandard = "^0.14.1"
 pytest = "^6.2.0"
 numpy = "^1.19.4"
 holoviews = {extras = ["recommended"], version = "^1.14.1"}
+torch = "^1.7.1"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
