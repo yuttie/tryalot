@@ -270,7 +270,7 @@ try:
 
         @staticmethod
         def match(data: Any) -> bool:
-            return type(data) is np.ndarray
+            return isinstance(data, np.ndarray)
 
         @staticmethod
         def load(path: Path) -> Any:
