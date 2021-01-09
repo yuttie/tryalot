@@ -202,3 +202,103 @@ def test_cashing_with_condition(tmp_path):
 
     assert first_p3 == fifth_p3
     assert first_p3 < second_p3 < third_p3 < forth_p3
+
+
+def test_any_product_type(tmp_path):
+    ctx = tryalot.Context(tmp_path)
+
+    product = [
+        0,
+        '1',
+        b'2',
+        [3],
+        {4: 'four'},
+        (5, 5.1),
+    ]
+
+    @ctx.module(input=[], output=['output'])
+    def process():
+        return product
+
+    ctx.compute('output')
+
+    from pathlib import Path
+    runhash = ctx.get_runhash(process)
+    path = ctx._get_path('output', runhash)
+    assert Path(path.parent, path.name + '.pickle.zst').is_file()
+    loaded_product = ctx._get('output', runhash)
+    assert loaded_product == product
+
+
+def test_numpy_ndarray_product_type(tmp_path):
+    import numpy as np
+
+    ctx = tryalot.Context(tmp_path)
+
+    product = np.array(range(12)).reshape((3, 4))
+
+    @ctx.module(input=[], output=['output'])
+    def process():
+        return product
+
+    ctx.compute('output')
+
+    from pathlib import Path
+    runhash = ctx.get_runhash(process)
+    path = ctx._get_path('output', runhash)
+    assert Path(path.parent, path.name + '.npz').is_file()
+    loaded_product = ctx._get('output', runhash)
+    assert np.array_equal(loaded_product, product)
+
+
+def test_holoviews_element_product_type(tmp_path):
+    import holoviews as hv
+    import numpy as np
+    hv.extension('matplotlib')
+
+    ctx = tryalot.Context(tmp_path)
+
+    np.random.seed(42)
+    coords = [(i, np.random.random()) for i in range(20)]
+    product = hv.Scatter(coords).opts(title='Title')
+
+    @ctx.module(input=[], output=['output'])
+    def process():
+        return product
+
+    ctx.compute('output')
+
+    from pathlib import Path
+    runhash = ctx.get_runhash(process)
+    path = ctx._get_path('output', runhash)
+    assert Path(path.parent, path.name + '.holoviews-pickle.zst').is_file()
+    loaded_product = ctx._get('output', runhash)
+    # Compare plot images made from product and loaded_product
+    hv.save(product, tmp_path.with_name('product.png'))
+    hv.save(loaded_product, tmp_path.with_name('loaded_product.png'))
+    with open(tmp_path.with_name('product.png'), 'rb') as f:
+        image_product = f.read()
+    with open(tmp_path.with_name('loaded_product.png'), 'rb') as f:
+        image_loaded_product = f.read()
+    assert image_loaded_product == image_product
+
+
+def test_torch_tensor_product_type(tmp_path):
+    import torch
+
+    ctx = tryalot.Context(tmp_path)
+
+    product = torch.tensor(range(12)).reshape((3, 4))
+
+    @ctx.module(input=[], output=['output'])
+    def process():
+        return product
+
+    ctx.compute('output')
+
+    from pathlib import Path
+    runhash = ctx.get_runhash(process)
+    path = ctx._get_path('output', runhash)
+    assert Path(path.parent, path.name + '.pt.zst').is_file()
+    loaded_product = ctx._get('output', runhash)
+    assert torch.equal(loaded_product, product)
