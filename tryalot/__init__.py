@@ -7,7 +7,7 @@ import io
 import logging
 from pathlib import Path
 import pickle
-from typing import Any, List
+from typing import Any, List, Sequence
 import warnings
 
 import zstandard as zstd
@@ -56,28 +56,34 @@ def _hash(x):
 
 
 class Module(metaclass=ABCMeta):
-    def __init__(self, input_names, output_names):
+    """A class representing a generator and/or consumer in pipelines"""
+    def __init__(self, input_names: Sequence[str], output_names: Sequence[str]):
         self._input_names = input_names
         self._output_names = output_names
 
     @property
-    def name(self):
+    def name(self) -> str:
+        """The module's name"""
         return self.__class__.__name__
 
     @property
-    def input_names(self):
+    def input_names(self) -> Sequence[str]:
+        """Names of data (products) given to the module"""
         return self._input_names
 
     @property
-    def output_names(self):
+    def output_names(self) -> Sequence[str]:
+        """Names of data (products) generated from the module"""
         return self._output_names
 
     @property
     def hash(self):
+        """A hash object to be used for versioning of the module"""
         return hashlib.sha1(self.execute.__code__.co_code)
 
     @abstractmethod
     def execute(self):
+        """The primary method which returns products generated from input"""
         pass
 
 
