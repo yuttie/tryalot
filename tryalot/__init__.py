@@ -88,6 +88,7 @@ class Module(metaclass=ABCMeta):
 
 
 def module(input, output):
+    """A decorator which turn a function into a module"""
     def decorator(f):
         class Wrapper(Module):
             def __init__(self):
