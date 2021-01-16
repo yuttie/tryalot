@@ -5,8 +5,10 @@ import hashlib
 import inspect
 import io
 import logging
+import os
 from pathlib import Path
 import pickle
+from time import sleep
 from typing import Any, List, Sequence
 import warnings
 
@@ -175,6 +177,26 @@ class Context:
             runhash,
             name)
 
+    def _lock_runhash_dir(self, runhash):
+        path = self._get_path('', runhash + '.lock')
+        first_time = True
+        while True:
+            try:
+                lock = open(path, 'x')
+            except FileExistsError:
+                if first_time:
+                    _logger.info(f'Waiting for lock on "{self._get_path("", runhash)}"...')
+                    first_time = False
+                sleep(0.1)
+            else:
+                break
+        lock.write(str(os.getpid()))
+        return lock
+
+    def _unlock_runhash_dir(self, lock):
+        lock.close()
+        Path(lock.name).unlink()
+
     def _has(self, name, runhash):
         path = self._get_path(name, runhash)
         for product_type in self.product_types:
@@ -232,8 +254,11 @@ class Context:
         _logger.info(f'Running module "{module.name}"')
         if condition is None:
             condition = {}
-        # Execute module if needed
+        # Compute runhash for this run
         runhash = self.get_runhash(module, condition)
+        # Lock runhash directory
+        lock = self._lock_runhash_dir(runhash)
+        # Execute module if needed
         if all(self._has(name, runhash) for name in module.output_names):
             _logger.info(f'Found cached products of module "{module.name}", skipping execution')
             products = tuple(self._get(name, runhash) for name in module.output_names)
@@ -254,6 +279,8 @@ class Context:
             # Store the products
             for name, product in zip(module.output_names, products):
                 self._put(name, runhash, product)
+        # Unlock runhash directory
+        self._unlock_runhash_dir(lock)
         # Return products
         return products
 
