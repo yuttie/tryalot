@@ -258,29 +258,31 @@ class Context:
         runhash = self.get_runhash(module, condition)
         # Lock runhash directory
         lock = self._lock_runhash_dir(runhash)
-        # Execute module if needed
-        if all(self._has(name, runhash) for name in module.output_names):
-            _logger.info(f'Found cached products of module "{module.name}", skipping execution')
-            products = tuple(self._get(name, runhash) for name in module.output_names)
-        else:
-            # Prepare inputs
-            args = []
-            for name in module.input_names:
-                producer = self._producer[name]
-                i = producer.output_names.index(name)
-                upstream_products = self.run(producer, condition)
-                args.append(upstream_products[i])
-            kwargs = condition.get(module.name, {})
-            # Execute module
-            _logger.info(f'Executing module "{module.name}"')
-            products = module.execute(*args, **kwargs)
-            if len(module.output_names) == 1:
-                products = (products, )
-            # Store the products
-            for name, product in zip(module.output_names, products):
-                self._put(name, runhash, product)
-        # Unlock runhash directory
-        self._unlock_runhash_dir(lock)
+        try:
+            # Execute module if needed
+            if all(self._has(name, runhash) for name in module.output_names):
+                _logger.info(f'Found cached products of module "{module.name}", skipping execution')
+                products = tuple(self._get(name, runhash) for name in module.output_names)
+            else:
+                # Prepare inputs
+                args = []
+                for name in module.input_names:
+                    producer = self._producer[name]
+                    i = producer.output_names.index(name)
+                    upstream_products = self.run(producer, condition)
+                    args.append(upstream_products[i])
+                kwargs = condition.get(module.name, {})
+                # Execute module
+                _logger.info(f'Executing module "{module.name}"')
+                products = module.execute(*args, **kwargs)
+                if len(module.output_names) == 1:
+                    products = (products, )
+                # Store the products
+                for name, product in zip(module.output_names, products):
+                    self._put(name, runhash, product)
+        finally:
+            # Unlock runhash directory
+            self._unlock_runhash_dir(lock)
         # Return products
         return products
 
