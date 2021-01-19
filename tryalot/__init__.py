@@ -179,6 +179,7 @@ class Context:
 
     def _lock_runhash_dir(self, runhash):
         path = self._get_path('', runhash + '.lock')
+        path.parent.mkdir(parents=True, exist_ok=True)
         first_time = True
         while True:
             try:
