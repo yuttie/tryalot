@@ -15,7 +15,7 @@ import warnings
 import zstandard as zstd
 
 
-__version__ = '0.3.3'
+__version__ = '0.3.4'
 
 
 _logger = logging.getLogger(__name__)
