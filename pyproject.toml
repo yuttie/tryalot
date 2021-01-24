@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "tryalot"
-version = "0.3.5"
+version = "0.3.6"
 description = "Try a lot without worrying about the hassle."
 authors = ["Yuta Taniguchi <yuta.taniguchi.y.t@gmail.com>"]
 license = "MIT"
