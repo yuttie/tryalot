@@ -86,6 +86,96 @@ def test_module_name_func():
     assert module_a.name == 'module_a'
 
 
+def test_class_module_hash():
+    class Process(tryalot.Module):
+        def __init__(self):
+            super().__init__([], [])
+        def execute(self):
+            return 1
+
+    output1 = Process().execute()
+    hash1 = Process().hash.digest()
+
+    class Process(tryalot.Module):
+        def __init__(self):
+            super().__init__([], [])
+        def execute(self):
+            return 2
+
+    output2 = Process().execute()
+    hash2 = Process().hash.digest()
+
+    assert output1 != output2
+    assert hash1 != hash2
+
+
+def test_func_module_hash():
+    @tryalot.module(input=[], output=['output'])
+    def process():
+        return 1
+
+    output1 = process.execute()
+    hash1 = process.hash.digest()
+
+    @tryalot.module(input=[], output=['output'])
+    def process():
+        return 2
+
+    output2 = process.execute()
+    hash2 = process.hash.digest()
+
+    assert output1 != output2
+    assert hash1 != hash2
+
+
+def test_class_module_runhash(tmp_path):
+    ctx = tryalot.Context(tmp_path)
+
+    class Process(tryalot.Module):
+        def __init__(self):
+            super().__init__([], ['output'])
+        def execute(self):
+            return 1
+    ctx.register_modules(Process())
+
+    output1 = ctx.compute('output')
+    runhash1 = ctx.get_runhash(Process())
+
+    class Process(tryalot.Module):
+        def __init__(self):
+            super().__init__([], ['output'])
+        def execute(self):
+            return 2
+    ctx.register_modules(Process())
+
+    output2 = ctx.compute('output')
+    runhash2 = ctx.get_runhash(Process())
+
+    assert output1 != output2
+    assert runhash1 != runhash2
+
+
+def test_func_module_runhash(tmp_path):
+    ctx = tryalot.Context(tmp_path)
+
+    @ctx.module(input=[], output=['output'])
+    def process():
+        return 1
+
+    output1 = ctx.compute('output')
+    runhash1 = ctx.get_runhash(process)
+
+    @ctx.module(input=[], output=['output'])
+    def process():
+        return 2
+
+    output2 = ctx.compute('output')
+    runhash2 = ctx.get_runhash(process)
+
+    assert output1 != output2
+    assert runhash1 != runhash2
+
+
 def test_pipeline(tmp_path):
     @tryalot.module(input=[], output=['p1_output1', 'p1_output2', 'p1_output3'])
     def process1():
