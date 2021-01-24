@@ -1,5 +1,6 @@
 from abc import ABCMeta, abstractmethod
 import contextlib
+from dis import Bytecode
 import functools
 import hashlib
 import inspect
@@ -81,7 +82,7 @@ class Module(metaclass=ABCMeta):
     @property
     def hash(self):
         """A hash object to be used for versioning of the module"""
-        return hashlib.sha1(self.execute.__code__.co_code)
+        return hashlib.sha1(Bytecode(self.execute).dis().encode('utf-8'))
 
     @abstractmethod
     def execute(self):
@@ -99,6 +100,10 @@ def module(input, output):
             def name(self):
                 """The module's name"""
                 return f.__name__
+            @property
+            def hash(self):
+                """A hash object to be used for versioning of the module"""
+                return hashlib.sha1(Bytecode(f).dis().encode('utf-8'))
             def execute(self, *args, **kwargs):
                 return f(*args, **kwargs)
         wrapper = Wrapper()
