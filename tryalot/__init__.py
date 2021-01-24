@@ -97,6 +97,7 @@ def module(input, output):
                 super().__init__(input, output)
             @property
             def name(self):
+                """The module's name"""
                 return f.__name__
             def execute(self, *args, **kwargs):
                 return f(*args, **kwargs)
