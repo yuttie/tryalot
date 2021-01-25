@@ -105,8 +105,19 @@ def test_class_module_hash():
     output2 = Process().execute()
     hash2 = Process().hash.digest()
 
+    class Process(tryalot.Module):
+        def __init__(self):
+            super().__init__([], [])
+        def execute(self):
+            return 1
+
+    output3 = Process().execute()
+    hash3 = Process().hash.digest()
+
     assert output1 != output2
     assert hash1 != hash2
+    assert output1 == output3
+    assert hash1 == hash3
 
 
 def test_func_module_hash():
@@ -124,8 +135,17 @@ def test_func_module_hash():
     output2 = process.execute()
     hash2 = process.hash.digest()
 
+    @tryalot.module(input=[], output=['output'])
+    def process():
+        return 1
+
+    output3 = process.execute()
+    hash3 = process.hash.digest()
+
     assert output1 != output2
     assert hash1 != hash2
+    assert output1 == output3
+    assert hash1 == hash3
 
 
 def test_class_module_runhash(tmp_path):
@@ -151,8 +171,20 @@ def test_class_module_runhash(tmp_path):
     output2 = ctx.compute('output')
     runhash2 = ctx.get_runhash(Process())
 
+    class Process(tryalot.Module):
+        def __init__(self):
+            super().__init__([], ['output'])
+        def execute(self):
+            return 1
+    ctx.register_modules(Process())
+
+    output3 = ctx.compute('output')
+    runhash3 = ctx.get_runhash(Process())
+
     assert output1 != output2
     assert runhash1 != runhash2
+    assert output1 == output3
+    assert runhash1 == runhash3
 
 
 def test_func_module_runhash(tmp_path):
@@ -172,8 +204,17 @@ def test_func_module_runhash(tmp_path):
     output2 = ctx.compute('output')
     runhash2 = ctx.get_runhash(process)
 
+    @ctx.module(input=[], output=['output'])
+    def process():
+        return 1
+
+    output3 = ctx.compute('output')
+    runhash3 = ctx.get_runhash(process)
+
     assert output1 != output2
     assert runhash1 != runhash2
+    assert output1 == output3
+    assert runhash1 == runhash3
 
 
 def test_pipeline(tmp_path):
