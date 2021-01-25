@@ -82,7 +82,7 @@ class Module(metaclass=ABCMeta):
     @property
     def hash(self):
         """A hash object to be used for versioning of the module"""
-        return hashlib.sha1(Bytecode(self.execute).dis().encode('utf-8'))
+        return hashlib.sha1(Bytecode(self.execute, first_line=0).dis().encode('utf-8'))
 
     @abstractmethod
     def execute(self):
@@ -103,7 +103,7 @@ def module(input, output):
             @property
             def hash(self):
                 """A hash object to be used for versioning of the module"""
-                return hashlib.sha1(Bytecode(f).dis().encode('utf-8'))
+                return hashlib.sha1(Bytecode(f, first_line=0).dis().encode('utf-8'))
             def execute(self, *args, **kwargs):
                 return f(*args, **kwargs)
         wrapper = Wrapper()
