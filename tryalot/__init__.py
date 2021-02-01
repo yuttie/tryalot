@@ -180,11 +180,12 @@ class Context:
     def _get_path(self, name, runhash):
         return Path(
             self._product_dir,
-            runhash,
+            runhash[0],
+            runhash[1],
             name)
 
     def _lock_runhash_dir(self, runhash):
-        path = self._get_path('', runhash + '.lock')
+        path = self._get_path('', (runhash[0], runhash[1] + '.lock'))
         path.parent.mkdir(parents=True, exist_ok=True)
         first_time = True
         while True:
@@ -192,7 +193,7 @@ class Context:
                 lock = open(path, 'x')
             except FileExistsError:
                 if first_time:
-                    _logger.info(f'Waiting for lock on "{self._get_path("", runhash)}"...')
+                    _logger.info(f'Waiting for lock on "{path}"...')
                     first_time = False
                 sleep(0.1)
             else:
@@ -243,7 +244,7 @@ class Context:
         upstream_hashes = []
         for name in module.input_names:
             producer = self._producer[name]
-            upstream_hash = self.get_runhash(producer, condition)
+            _, upstream_hash = self.get_runhash(producer, condition)
             upstream_hashes.append(upstream_hash)
         # Get keyword arguments from condition for module
         kwargs = condition.get(module.name, {})
@@ -253,9 +254,9 @@ class Context:
         h.update(module.hash.digest())
         h.update(hashlib.sha1(''.join(upstream_hashes).encode('utf-8')).digest())
         h.update(_hash(tuple(sorted(kwargs.items()))))
-        runhash = h.hexdigest()
         # Return runhash
-        return runhash
+        return module.name, h.hexdigest()
+
 
     def run(self, module, condition=None):
         _logger.info(f'Running module "{module.name}"')
