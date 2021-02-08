@@ -246,15 +246,22 @@ class Context:
             producer = self._producer[name]
             _, upstream_hash = self.get_runhash(producer, condition)
             upstream_hashes.append(upstream_hash)
+        _logger.debug(f'get_runhash@{module.name}: raw upstream hashes: {upstream_hashes}')
         # Get keyword arguments from condition for module
         kwargs = condition.get(module.name, {})
+        _logger.debug(f'get_runhash@{module.name}: kwargs: {kwargs}')
         # Compute runhash that identifies this run
         h = hashlib.sha1()
         h.update(hashlib.sha1(module.name.encode('utf-8')).digest())
         h.update(module.hash.digest())
         h.update(hashlib.sha1(''.join(upstream_hashes).encode('utf-8')).digest())
         h.update(_hash(tuple(sorted(kwargs.items()))))
+        _logger.debug(f"get_runhash@{module.name}: hash(module name) = {hashlib.sha1(module.name.encode('utf-8')).digest()}")
+        _logger.debug(f"get_runhash@{module.name}: hash(module hash) = {module.hash.digest()}")
+        _logger.debug(f"get_runhash@{module.name}: hash(upstream hashes) = {hashlib.sha1(''.join(upstream_hashes).encode('utf-8')).digest()}")
+        _logger.debug(f"get_runhash@{module.name}: hash(kwargs) = {_hash(tuple(sorted(kwargs.items())))}")
         # Return runhash
+        _logger.debug(f'get_runhash@{module.name}: runhash = {(module.name, h.hexdigest())}')
         return module.name, h.hexdigest()
 
 
