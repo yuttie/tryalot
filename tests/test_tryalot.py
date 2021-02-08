@@ -59,7 +59,7 @@ def test_hash():
 
 
 def test_decorator():
-    @tryalot.module(input=[], output=['output1', 'output2', 'output3'])
+    @tryalot.module(input=[], output=['output1', 'output2', 'output3'], version=1)
     def process():
         """This is the docstring for process."""
         return 'output1', 'output2', 'output3'
@@ -73,83 +73,33 @@ def test_decorator():
 def test_module_name_class():
     class ModuleA(tryalot.Module):
         def __init__(self):
-            super().__init__([], [])
+            super().__init__([], [], 0)
         def execute(self):
             pass
     assert ModuleA().name == 'ModuleA'
 
 
 def test_module_name_func():
-    @tryalot.module([], [])
+    @tryalot.module([], [], 0)
     def module_a():
         pass
     assert module_a.name == 'module_a'
 
 
-def test_class_module_hash():
-    from functools import reduce
-
-    class Process(tryalot.Module):
+def test_module_version_class():
+    class ModuleA(tryalot.Module):
         def __init__(self):
-            super().__init__([], [])
+            super().__init__([], [], 0)
         def execute(self):
-            return reduce(lambda x, y: x + y, [3, 1, 4, 1, 5, 9, 2, 6, 5, 3])
-
-    output1 = Process().execute()
-    hash1 = Process().hash.digest()
-
-    class Process(tryalot.Module):
-        def __init__(self):
-            super().__init__([], [])
-        def execute(self):
-            return reduce(lambda x, y: x * y, [3, 1, 4, 1, 5, 9, 2, 6, 5, 3])
-
-    output2 = Process().execute()
-    hash2 = Process().hash.digest()
-
-    class Process(tryalot.Module):
-        def __init__(self):
-            super().__init__([], [])
-        def execute(self):
-            return reduce(lambda x, y: x + y, [3, 1, 4, 1, 5, 9, 2, 6, 5, 3])
-
-    output3 = Process().execute()
-    hash3 = Process().hash.digest()
-
-    assert output1 != output2
-    assert hash1 != hash2
-    assert output1 == output3
-    assert hash1 == hash3
+            pass
+    assert ModuleA().version == '0'
 
 
-def test_func_module_hash():
-    from functools import reduce
-
-    @tryalot.module(input=[], output=['output'])
-    def process():
-        return reduce(lambda x, y: x + y, [3, 1, 4, 1, 5, 9, 2, 6, 5, 3])
-
-    output1 = process.execute()
-    hash1 = process.hash.digest()
-
-    @tryalot.module(input=[], output=['output'])
-    def process():
-        return reduce(lambda x, y: x * y, [3, 1, 4, 1, 5, 9, 2, 6, 5, 3])
-
-    output2 = process.execute()
-    hash2 = process.hash.digest()
-
-    @tryalot.module(input=[], output=['output'])
-    def process():
-        return reduce(lambda x, y: x + y, [3, 1, 4, 1, 5, 9, 2, 6, 5, 3])
-
-    output3 = process.execute()
-    hash3 = process.hash.digest()
-
-    assert output1 != output2
-    assert hash1 != hash2
-    assert output1 == output3
-    assert hash1 == hash3
+def test_module_version_func():
+    @tryalot.module([], [], 0)
+    def module_a():
+        pass
+    assert module_a.version == '0'
 
 
 def test_class_module_runhash(tmp_path):
@@ -157,7 +107,7 @@ def test_class_module_runhash(tmp_path):
 
     class Process(tryalot.Module):
         def __init__(self):
-            super().__init__([], ['output'])
+            super().__init__([], ['output'], 1)
         def execute(self):
             return 1
     ctx.register_modules(Process())
@@ -167,7 +117,7 @@ def test_class_module_runhash(tmp_path):
 
     class Process(tryalot.Module):
         def __init__(self):
-            super().__init__([], ['output'])
+            super().__init__([], ['output'], 2)
         def execute(self):
             return 2
     ctx.register_modules(Process())
@@ -177,7 +127,7 @@ def test_class_module_runhash(tmp_path):
 
     class Process(tryalot.Module):
         def __init__(self):
-            super().__init__([], ['output'])
+            super().__init__([], ['output'], 1)
         def execute(self):
             return 1
     ctx.register_modules(Process())
@@ -194,21 +144,21 @@ def test_class_module_runhash(tmp_path):
 def test_func_module_runhash(tmp_path):
     ctx = tryalot.Context(tmp_path)
 
-    @ctx.module(input=[], output=['output'])
+    @ctx.module(input=[], output=['output'], version=1)
     def process():
         return 1
 
     output1 = ctx.compute('output')
     runhash1 = ctx.get_runhash(process)
 
-    @ctx.module(input=[], output=['output'])
+    @ctx.module(input=[], output=['output'], version=2)
     def process():
         return 2
 
     output2 = ctx.compute('output')
     runhash2 = ctx.get_runhash(process)
 
-    @ctx.module(input=[], output=['output'])
+    @ctx.module(input=[], output=['output'], version=1)
     def process():
         return 1
 
@@ -222,7 +172,7 @@ def test_func_module_runhash(tmp_path):
 
 
 def test_pipeline(tmp_path):
-    @tryalot.module(input=[], output=['p1_output1', 'p1_output2', 'p1_output3'])
+    @tryalot.module(input=[], output=['p1_output1', 'p1_output2', 'p1_output3'], version=1)
     def process1():
         """This is the docstring for process1."""
         print('Executing process1')
@@ -233,7 +183,8 @@ def test_pipeline(tmp_path):
         def __init__(self):
             super().__init__(
                 ['p1_output1', 'p1_output2', 'p1_output3'],
-                ['p2_output'])
+                ['p2_output'],
+                1)
 
         def execute(self, x, y, z):
             print('Executing process2')
@@ -242,7 +193,7 @@ def test_pipeline(tmp_path):
     ctx = tryalot.Context(tmp_path)
     ctx.register_modules(process1, Process2())
 
-    @ctx.module(['p2_output'], ['p3_output'])
+    @ctx.module(['p2_output'], ['p3_output'], 1)
     def process3(w):
         return w + '|' + w
 
@@ -250,7 +201,7 @@ def test_pipeline(tmp_path):
 
 
 def test_pipeline_with_condition(tmp_path):
-    @tryalot.module(input=[], output=['p1_output1', 'p1_output2', 'p1_output3'])
+    @tryalot.module(input=[], output=['p1_output1', 'p1_output2', 'p1_output3'], version=1)
     def process1(*, upper_case):
         """This is the docstring for process1."""
         print('Executing process1')
@@ -264,7 +215,8 @@ def test_pipeline_with_condition(tmp_path):
         def __init__(self):
             super().__init__(
                 ['p1_output1', 'p1_output2', 'p1_output3'],
-                ['p2_output'])
+                ['p2_output'],
+                1)
 
         def execute(self, x, y, z, *, glue):
             print('Executing process2')
@@ -273,7 +225,7 @@ def test_pipeline_with_condition(tmp_path):
     ctx = tryalot.Context(tmp_path)
     ctx.register_modules(process1, Process2())
 
-    @ctx.module(['p2_output'], ['p3_output'])
+    @ctx.module(['p2_output'], ['p3_output'], version=1)
     def process3(w):
         return w + '|' + w
 
@@ -286,18 +238,18 @@ def test_cashing(tmp_path):
 
     ctx = tryalot.Context(tmp_path)
 
-    @ctx.module(input=[], output=['p1_output'])
+    @ctx.module(input=[], output=['p1_output'], version=1)
     def process1():
         """This is the docstring for process1."""
         print('Executing process1')
         return time.perf_counter_ns()
 
-    @ctx.module(input=['p1_output'], output=['p2_output'])
+    @ctx.module(input=['p1_output'], output=['p2_output'], version=1)
     def process2(x):
         print('Executing process2')
         return time.perf_counter_ns()
 
-    @ctx.module(input=['p2_output'], output=['p3_output'])
+    @ctx.module(input=['p2_output'], output=['p3_output'], version=1)
     def process3(x):
         print('Executing process3')
         return time.perf_counter_ns()
@@ -313,18 +265,18 @@ def test_cashing_with_condition(tmp_path):
 
     ctx = tryalot.Context(tmp_path)
 
-    @ctx.module(input=[], output=['p1_output'])
+    @ctx.module(input=[], output=['p1_output'], version=1)
     def process1(*, a):
         """This is the docstring for process1."""
         print('Executing process1')
         return time.perf_counter_ns()
 
-    @ctx.module(input=['p1_output'], output=['p2_output'])
+    @ctx.module(input=['p1_output'], output=['p2_output'], version=1)
     def process2(x, *, a):
         print('Executing process2')
         return time.perf_counter_ns()
 
-    @ctx.module(input=['p2_output'], output=['p3_output'])
+    @ctx.module(input=['p2_output'], output=['p3_output'], version=1)
     def process3(x):
         print('Executing process3')
         return time.perf_counter_ns()
@@ -351,7 +303,7 @@ def test_any_product_type(tmp_path):
         (5, 5.1),
     ]
 
-    @ctx.module(input=[], output=['output'])
+    @ctx.module(input=[], output=['output'], version=1)
     def process():
         return product
 
@@ -372,7 +324,7 @@ def test_numpy_ndarray_product_type(tmp_path):
 
     product = np.array(range(12)).reshape((3, 4))
 
-    @ctx.module(input=[], output=['output'])
+    @ctx.module(input=[], output=['output'], version=1)
     def process():
         return product
 
@@ -397,7 +349,7 @@ def test_holoviews_element_product_type(tmp_path):
     coords = [(i, np.random.random()) for i in range(20)]
     product = hv.Scatter(coords).opts(title='Title')
 
-    @ctx.module(input=[], output=['output'])
+    @ctx.module(input=[], output=['output'], version=1)
     def process():
         return product
 
@@ -425,7 +377,7 @@ def test_torch_tensor_product_type(tmp_path):
 
     product = torch.tensor(range(12)).reshape((3, 4))
 
-    @ctx.module(input=[], output=['output'])
+    @ctx.module(input=[], output=['output'], version=1)
     def process():
         return product
 

@@ -10,7 +10,7 @@ import os
 from pathlib import Path
 import pickle
 from time import sleep
-from typing import Any, List, Sequence
+from typing import Any, List, Sequence, Union
 import warnings
 
 import zstandard as zstd
@@ -60,9 +60,10 @@ def _hash(x):
 
 class Module(metaclass=ABCMeta):
     """A class representing a generator and/or consumer in pipelines"""
-    def __init__(self, input_names: Sequence[str], output_names: Sequence[str]):
+    def __init__(self, input_names: Sequence[str], output_names: Sequence[str], version: Union[int, str]):
         self._input_names = input_names
         self._output_names = output_names
+        self._version = str(version)
 
     @property
     def name(self) -> str:
@@ -80,9 +81,9 @@ class Module(metaclass=ABCMeta):
         return self._output_names
 
     @property
-    def hash(self):
-        """A hash object to be used for versioning of the module"""
-        return hashlib.sha1(Bytecode(self.execute, first_line=0).dis().encode('utf-8'))
+    def version(self) -> str:
+        """A string to be used for versioning of the module"""
+        return self._version
 
     @abstractmethod
     def execute(self):
@@ -90,20 +91,16 @@ class Module(metaclass=ABCMeta):
         pass
 
 
-def module(input, output):
+def module(input, output, version):
     """A decorator which turn a function into a module"""
     def decorator(f):
         class Wrapper(Module):
             def __init__(self):
-                super().__init__(input, output)
+                super().__init__(input, output, version)
             @property
             def name(self):
                 """The module's name"""
                 return f.__name__
-            @property
-            def hash(self):
-                """A hash object to be used for versioning of the module"""
-                return hashlib.sha1(Bytecode(f, first_line=0).dis().encode('utf-8'))
             def execute(self, *args, **kwargs):
                 return f(*args, **kwargs)
         wrapper = Wrapper()
@@ -169,8 +166,8 @@ class Context:
                 self._producer[name] = mod
             _logger.info(f'Module "{mod.name}" has been registered')
 
-    def module(self, input, output):
-        decorator = module(input, output)
+    def module(self, input, output, version):
+        decorator = module(input, output, version)
         def deco(f):
             module = decorator(f)
             self.register_modules(module)
@@ -253,11 +250,11 @@ class Context:
         # Compute runhash that identifies this run
         h = hashlib.sha1()
         h.update(hashlib.sha1(module.name.encode('utf-8')).digest())
-        h.update(module.hash.digest())
+        h.update(hashlib.sha1(module.version.encode('utf-8')).digest())
         h.update(hashlib.sha1(''.join(upstream_hashes).encode('utf-8')).digest())
         h.update(_hash(tuple(sorted(kwargs.items()))))
         _logger.debug(f"get_runhash@{module.name}: hash(module name) = {hashlib.sha1(module.name.encode('utf-8')).digest()}")
-        _logger.debug(f"get_runhash@{module.name}: hash(module hash) = {module.hash.digest()}")
+        _logger.debug(f"get_runhash@{module.name}: hash(module hash) = {hashlib.sha1(module.version.encode('utf-8')).digest()}")
         _logger.debug(f"get_runhash@{module.name}: hash(upstream hashes) = {hashlib.sha1(''.join(upstream_hashes).encode('utf-8')).digest()}")
         _logger.debug(f"get_runhash@{module.name}: hash(kwargs) = {_hash(tuple(sorted(kwargs.items())))}")
         # Return runhash
