@@ -87,11 +87,13 @@ def test_module_name_func():
 
 
 def test_class_module_hash():
+    from functools import reduce
+
     class Process(tryalot.Module):
         def __init__(self):
             super().__init__([], [])
         def execute(self):
-            return 1
+            return reduce(lambda x, y: x + y, [3, 1, 4, 1, 5, 9, 2, 6, 5, 3])
 
     output1 = Process().execute()
     hash1 = Process().hash.digest()
@@ -100,7 +102,7 @@ def test_class_module_hash():
         def __init__(self):
             super().__init__([], [])
         def execute(self):
-            return 2
+            return reduce(lambda x, y: x * y, [3, 1, 4, 1, 5, 9, 2, 6, 5, 3])
 
     output2 = Process().execute()
     hash2 = Process().hash.digest()
@@ -109,7 +111,7 @@ def test_class_module_hash():
         def __init__(self):
             super().__init__([], [])
         def execute(self):
-            return 1
+            return reduce(lambda x, y: x + y, [3, 1, 4, 1, 5, 9, 2, 6, 5, 3])
 
     output3 = Process().execute()
     hash3 = Process().hash.digest()
@@ -121,23 +123,25 @@ def test_class_module_hash():
 
 
 def test_func_module_hash():
+    from functools import reduce
+
     @tryalot.module(input=[], output=['output'])
     def process():
-        return 1
+        return reduce(lambda x, y: x + y, [3, 1, 4, 1, 5, 9, 2, 6, 5, 3])
 
     output1 = process.execute()
     hash1 = process.hash.digest()
 
     @tryalot.module(input=[], output=['output'])
     def process():
-        return 2
+        return reduce(lambda x, y: x * y, [3, 1, 4, 1, 5, 9, 2, 6, 5, 3])
 
     output2 = process.execute()
     hash2 = process.hash.digest()
 
     @tryalot.module(input=[], output=['output'])
     def process():
-        return 1
+        return reduce(lambda x, y: x + y, [3, 1, 4, 1, 5, 9, 2, 6, 5, 3])
 
     output3 = process.execute()
     hash3 = process.hash.digest()
