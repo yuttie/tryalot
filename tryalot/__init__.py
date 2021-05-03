@@ -151,7 +151,7 @@ class Context:
 
     def __init__(self, product_dir='.products'):
         self._product_dir = product_dir
-        self._modules = set()
+        self._modules = []
         self._producer = {}
         _logger.info(f'Using "{self._product_dir}" as a product repository')
 
@@ -159,7 +159,7 @@ class Context:
         for mod in modules:
             if not isinstance(mod, Module):
                 warnings.warn(f'Module "{mod.name}" is not an instance of Module', RuntimeWarning)
-            self._modules.add(mod)
+            self._modules.append(mod)
             for name in mod.output_names:
                 if name in self._producer:
                     warnings.warn(f'Producer for "{name}" is already registered')
