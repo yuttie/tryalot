@@ -15,7 +15,8 @@ zstandard = "^0.14.1"
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.0"
 numpy = "^1.19.4"
-holoviews = {extras = ["recommended"], version = "^1.14.1"}
+holoviews = "^1.14.1"
+matplotlib = "^3.4.1"
 torch = "^1.7.1"
 
 [build-system]
