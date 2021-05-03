@@ -389,3 +389,32 @@ def test_torch_tensor_product_type(tmp_path):
     assert Path(path.parent, path.name + '.pt.zst').is_file()
     loaded_product = ctx._get('output', runhash)
     assert torch.equal(loaded_product, product)
+
+
+def test_reuse_same_function_for_different_input_and_output(tmp_path):
+    ctx = tryalot.Context(tmp_path)
+
+    @ctx.module([], ['one'], 1)
+    def one():
+        return 1
+
+    @ctx.module([], ['three'], 1)
+    def three():
+        return 3
+
+    @ctx.module([], ['five'], 1)
+    def five():
+        return 5
+
+    def double(x):
+        return 2 * x
+
+    ctx.register_modules(
+        tryalot.module(['one'  ], ['two'], 1)(double),
+        tryalot.module(['three'], ['six'], 1)(double),
+        tryalot.module(['five' ], ['ten'], 1)(double),
+    )
+
+    assert ctx.compute('two') == 2
+    assert ctx.compute('six') == 6
+    assert ctx.compute('ten') == 10
