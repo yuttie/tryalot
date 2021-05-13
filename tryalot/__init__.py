@@ -312,12 +312,12 @@ class Context:
         product_ids = {}
         for i, mod in enumerate(self._modules):
             mid = f'M{i}'
-            dot.node(mid, mod.name, shape='ellipse')
+            dot.node(mid, mod.name, shape='box')
             for output_name in mod.output_names:
                 if output_name not in product_ids:
                     pid = f'P{len(product_ids)}'
                     product_ids[output_name] = pid
-                    dot.node(pid, output_name, shape='box')
+                    dot.node(pid, output_name, shape='ellipse')
                 pid = product_ids[output_name]
                 dot.edge(mid, pid)
         for i, mod in enumerate(self._modules):
@@ -326,7 +326,7 @@ class Context:
                 if input_name not in product_ids:
                     pid = f'P{len(product_ids)}'
                     product_ids[input_name] = pid
-                    dot.node(pid, input_name, shape='box', color='red')
+                    dot.node(pid, input_name, shape='ellipse', color='red')
                 pid = product_ids[input_name]
                 dot.edge(pid, mid)
         return dot

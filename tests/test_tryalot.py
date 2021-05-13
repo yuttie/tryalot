@@ -445,32 +445,32 @@ def test_depgraph(tmp_path):
 
     source = ctx.depgraph().source
     assert source == '''digraph {
-	M0 [label=m1 shape=ellipse]
-	P0 [label=p1 shape=box]
+	M0 [label=m1 shape=box]
+	P0 [label=p1 shape=ellipse]
 	M0 -> P0
-	P1 [label=p2 shape=box]
+	P1 [label=p2 shape=ellipse]
 	M0 -> P1
-	P2 [label=p3 shape=box]
+	P2 [label=p3 shape=ellipse]
 	M0 -> P2
-	P3 [label=p4 shape=box]
+	P3 [label=p4 shape=ellipse]
 	M0 -> P3
-	M1 [label=m2 shape=ellipse]
-	P4 [label=p5 shape=box]
+	M1 [label=m2 shape=box]
+	P4 [label=p5 shape=ellipse]
 	M1 -> P4
-	M2 [label=m3 shape=ellipse]
-	P5 [label=p6 shape=box]
+	M2 [label=m3 shape=box]
+	P5 [label=p6 shape=ellipse]
 	M2 -> P5
-	M3 [label=m4 shape=ellipse]
-	P6 [label=p7 shape=box]
+	M3 [label=m4 shape=box]
+	P6 [label=p7 shape=ellipse]
 	M3 -> P6
-	M4 [label=m5 shape=ellipse]
-	P7 [label=p101 shape=box]
+	M4 [label=m5 shape=box]
+	P7 [label=p101 shape=ellipse]
 	M4 -> P7
 	P0 -> M1
 	P1 -> M1
 	P4 -> M2
 	P2 -> M2
 	P4 -> M3
-	P8 [label=p100 color=red shape=box]
+	P8 [label=p100 color=red shape=ellipse]
 	P8 -> M4
 }'''
