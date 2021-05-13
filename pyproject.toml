@@ -11,6 +11,7 @@ repository = "https://github.com/yuttie/tryalot"
 [tool.poetry.dependencies]
 python = "^3.7"
 zstandard = "^0.14.1"
+graphviz = "^0.16"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.0"

@@ -13,6 +13,7 @@ from time import sleep
 from typing import Any, List, Sequence, Union
 import warnings
 
+from graphviz import Digraph
 import zstandard as zstd
 
 
@@ -151,6 +152,7 @@ class Context:
 
     def __init__(self, product_dir='.products'):
         self._product_dir = product_dir
+        self._modules = []
         self._producer = {}
         _logger.info(f'Using "{self._product_dir}" as a product repository')
 
@@ -158,6 +160,7 @@ class Context:
         for mod in modules:
             if not isinstance(mod, Module):
                 warnings.warn(f'Module "{mod.name}" is not an instance of Module', RuntimeWarning)
+            self._modules.append(mod)
             for name in mod.output_names:
                 if name in self._producer:
                     warnings.warn(f'Producer for "{name}" is already registered')
@@ -303,6 +306,30 @@ class Context:
         i = module.output_names.index(name)
         products = self.run(module, condition)
         return products[i]
+
+    def depgraph(self):
+        dot = Digraph()
+        product_ids = {}
+        for i, mod in enumerate(self._modules):
+            mid = f'M{i}'
+            dot.node(mid, mod.name, shape='ellipse')
+            for output_name in mod.output_names:
+                if output_name not in product_ids:
+                    pid = f'P{len(product_ids)}'
+                    product_ids[output_name] = pid
+                    dot.node(pid, output_name, shape='box')
+                pid = product_ids[output_name]
+                dot.edge(mid, pid)
+        for i, mod in enumerate(self._modules):
+            mid = f'M{i}'
+            for input_name in mod.input_names:
+                if input_name not in product_ids:
+                    pid = f'P{len(product_ids)}'
+                    product_ids[input_name] = pid
+                    dot.node(pid, input_name, shape='box', color='red')
+                pid = product_ids[input_name]
+                dot.edge(pid, mid)
+        return dot
 
 
 # Additional support for library-specific product types

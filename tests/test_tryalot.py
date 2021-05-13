@@ -418,3 +418,59 @@ def test_reuse_same_function_for_different_input_and_output(tmp_path):
     assert ctx.compute('two') == 2
     assert ctx.compute('six') == 6
     assert ctx.compute('ten') == 10
+
+
+def test_depgraph(tmp_path):
+    ctx = tryalot.Context(tmp_path)
+
+    @ctx.module(input=[], output=['p1', 'p2', 'p3', 'p4'], version=1)
+    def m1():
+        pass
+
+    @ctx.module(input=['p1', 'p2'], output=['p5'], version=1)
+    def m2(x):
+        pass
+
+    @ctx.module(input=['p5', 'p3'], output=['p6'], version=1)
+    def m3(x):
+        pass
+
+    @ctx.module(input=['p5'], output=['p7'], version=1)
+    def m4(x):
+        pass
+
+    @ctx.module(input=['p100'], output=['p101'], version=1)
+    def m5(x):
+        pass
+
+    source = ctx.depgraph().source
+    assert source == '''digraph {
+	M0 [label=m1 shape=ellipse]
+	P0 [label=p1 shape=box]
+	M0 -> P0
+	P1 [label=p2 shape=box]
+	M0 -> P1
+	P2 [label=p3 shape=box]
+	M0 -> P2
+	P3 [label=p4 shape=box]
+	M0 -> P3
+	M1 [label=m2 shape=ellipse]
+	P4 [label=p5 shape=box]
+	M1 -> P4
+	M2 [label=m3 shape=ellipse]
+	P5 [label=p6 shape=box]
+	M2 -> P5
+	M3 [label=m4 shape=ellipse]
+	P6 [label=p7 shape=box]
+	M3 -> P6
+	M4 [label=m5 shape=ellipse]
+	P7 [label=p101 shape=box]
+	M4 -> P7
+	P0 -> M1
+	P1 -> M1
+	P4 -> M2
+	P2 -> M2
+	P4 -> M3
+	P8 [label=p100 color=red shape=box]
+	P8 -> M4
+}'''
