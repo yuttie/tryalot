@@ -154,7 +154,7 @@ class Context:
         self._product_dir = product_dir
         self._modules = []
         self._producer = {}
-        _logger.info(f'Using "{self._product_dir}" as a product repository')
+        _logger.debug(f'Using "{self._product_dir}" as a product repository')
 
     def register_modules(self, *modules):
         for mod in modules:
@@ -165,7 +165,7 @@ class Context:
                 if name in self._producer:
                     warnings.warn(f'Producer for "{name}" is already registered')
                 self._producer[name] = mod
-            _logger.info(f'Module "{mod.name}" has been registered')
+            _logger.debug(f'Module "{mod.name}" has been registered')
 
     def module(self, input, output, version):
         decorator = module(input, output, version)
@@ -233,7 +233,7 @@ class Context:
                         path.unlink()
                     raise e
                 break
-        _logger.info(f'Product has been saved as "{path}"')
+        _logger.debug(f'Product has been saved as "{path}"')
 
     def get_runhash(self, module, condition=None):
         if condition is None:
@@ -264,7 +264,7 @@ class Context:
 
 
     def run(self, module, condition=None):
-        _logger.info(f'Running module "{module.name}"')
+        _logger.debug(f'Running module "{module.name}"')
         if condition is None:
             condition = {}
         # Compute runhash for this run
@@ -274,7 +274,7 @@ class Context:
         try:
             # Execute module if needed
             if all(self._has(name, runhash) for name in module.output_names):
-                _logger.info(f'Found cached products of module "{module.name}", skipping execution')
+                _logger.debug(f'Found cached products of module "{module.name}", skipping execution')
                 products = tuple(self._get(name, runhash) for name in module.output_names)
             else:
                 # Prepare inputs
