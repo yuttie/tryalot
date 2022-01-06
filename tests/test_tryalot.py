@@ -473,4 +473,5 @@ def test_depgraph(tmp_path):
 	P4 -> M3
 	P8 [label=p100 color=red shape=ellipse]
 	P8 -> M4
-}'''
+}
+'''
