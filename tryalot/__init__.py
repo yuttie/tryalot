@@ -308,11 +308,11 @@ class Context:
         return products[i]
 
     def depgraph(self):
-        dot = Digraph()
+        dot = Digraph(node_attr=dict(fontname='monospace', margin='0,0.08'))
         product_ids = {}
         for i, mod in enumerate(self._modules):
             mid = f'M{i}'
-            dot.node(mid, mod.name, shape='box')
+            dot.node(mid, mod.name, shape='invhouse', style='filled', fillcolor='gray', fontcolor='black')
             for output_name in mod.output_names:
                 if output_name not in product_ids:
                     pid = f'P{len(product_ids)}'
