@@ -1,16 +1,15 @@
 from abc import ABCMeta, abstractmethod
 import contextlib
-from dis import Bytecode
 import functools
 import hashlib
-import inspect
 import io
 import logging
 import os
+from os import PathLike
 from pathlib import Path
 import pickle
 from time import sleep
-from typing import Any, List, Sequence, Union
+from typing import Any, Callable, Dict, Generator, List, Optional, Sequence, Tuple, Type, Union
 import warnings
 
 from graphviz import Digraph
@@ -24,7 +23,7 @@ _logger = logging.getLogger(__name__)
 
 
 @contextlib.contextmanager
-def zstd_open_write(path, *args, **kwargs):
+def zstd_open_write(path: PathLike, *args, **kwargs) -> Generator[Any, None, None]:  # FIXME: ZstdCompressionWriter is actually returned instead of Any but it is not exported from zstandard
     with open(path, 'wb') as f:
         cctx = zstd.ZstdCompressor(*args, **kwargs)
         with cctx.stream_writer(f) as comp:
@@ -32,7 +31,7 @@ def zstd_open_write(path, *args, **kwargs):
 
 
 @contextlib.contextmanager
-def zstd_open_read(path, *args, **kwargs):
+def zstd_open_read(path: PathLike, *args, **kwargs) -> Generator[io.BufferedReader, None, None]:
     with open(path, 'rb') as f:
         dctx = zstd.ZstdDecompressor(*args, **kwargs)
         with dctx.stream_reader(f) as decomp:
@@ -46,14 +45,14 @@ class HashSink:
     def write(self, b: bytes):
         self._h.update(b)
 
-    def digest(self):
+    def digest(self) -> bytes:
         return self._h.digest()
 
-    def hexdigest(self):
+    def hexdigest(self) -> str:
         return self._h.hexdigest()
 
 
-def _hash(x):
+def _hash(x: Any) -> bytes:
     sink = HashSink()
     pickle.dump(x, sink, protocol=4)
     return sink.digest()
@@ -87,12 +86,12 @@ class Module(metaclass=ABCMeta):
         return self._version
 
     @abstractmethod
-    def execute(self):
+    def execute(self) -> Tuple[Any]:
         """The primary method which returns products generated from input"""
         pass
 
 
-def module(input, output, version):
+def module(input: Sequence[str], output: Sequence[str], version: Any) -> Callable[[Callable[..., Any]], Module]:
     """A decorator which turn a function into a module"""
     def decorator(f):
         class Wrapper(Module):
@@ -109,21 +108,25 @@ def module(input, output, version):
     return decorator
 
 
-class ProductType:
+class ProductType(metaclass=ABCMeta):
     @staticmethod
+    @abstractmethod
     def file_ext() -> str:
         pass
 
     @staticmethod
+    @abstractmethod
     def match(data: Any) -> bool:
         pass
 
     @staticmethod
-    def load(path: Path) -> Any:
+    @abstractmethod
+    def load(path: PathLike) -> Any:
         pass
 
     @staticmethod
-    def dump(data: Any, path: Path):
+    @abstractmethod
+    def dump(data: Any, path: PathLike):
         pass
 
 
@@ -137,18 +140,18 @@ class AnyProductType(ProductType):
         return True
 
     @staticmethod
-    def load(path: Path) -> Any:
+    def load(path: PathLike) -> Any:
         with zstd_open_read(path) as f:
             return pickle.load(f)
 
     @staticmethod
-    def dump(data: Any, path: Path):
+    def dump(data: Any, path: PathLike):
         with zstd_open_write(path, level=19, threads=-1) as f:
             pickle.dump(data, f, protocol=4)
 
 
 class Context:
-    product_types: List[ProductType] = [AnyProductType]
+    product_types: List[Type[ProductType]] = [AnyProductType]
 
     def __init__(self, product_dir='.products'):
         self._product_dir = product_dir
@@ -167,7 +170,7 @@ class Context:
                 self._producer[name] = mod
             _logger.debug(f'Module "{mod.name}" has been registered')
 
-    def module(self, input, output, version):
+    def module(self, input: Sequence[str], output: Sequence[str], version: Any) -> Callable[[Callable[..., Any]], Module]:
         decorator = module(input, output, version)
         def deco(f):
             module = decorator(f)
@@ -175,14 +178,14 @@ class Context:
             return module
         return deco
 
-    def _get_path(self, name, runhash):
+    def _get_path(self, name: str, runhash: Tuple[str, str]) -> Path:
         return Path(
             self._product_dir,
             runhash[0],
             runhash[1],
             name)
 
-    def _lock_runhash_dir(self, runhash):
+    def _lock_runhash_dir(self, runhash: Tuple[str, str]) -> io.TextIOWrapper:
         path = self._get_path('', (runhash[0], runhash[1] + '.lock'))
         path.parent.mkdir(parents=True, exist_ok=True)
         first_time = True
@@ -199,11 +202,11 @@ class Context:
         lock.write(str(os.getpid()))
         return lock
 
-    def _unlock_runhash_dir(self, lock):
+    def _unlock_runhash_dir(self, lock: io.TextIOWrapper):
         lock.close()
         Path(lock.name).unlink()
 
-    def _has(self, name, runhash):
+    def _has(self, name: str, runhash: Tuple[str, str]) -> bool:
         path = self._get_path(name, runhash)
         for product_type in self.product_types:
             candidate_path = Path(path.parent, path.name + product_type.file_ext())
@@ -211,7 +214,7 @@ class Context:
                 return True
         return False
 
-    def _get(self, name, runhash, default=None):
+    def _get(self, name: str, runhash: Tuple[str, str], default: Any=None) -> Any:
         path = self._get_path(name, runhash)
         for product_type in self.product_types:
             candidate_path = Path(path.parent, path.name + product_type.file_ext())
@@ -220,7 +223,7 @@ class Context:
                 return product_type.load(path)
         return default
 
-    def _put(self, name, runhash, data):
+    def _put(self, name: str, runhash: Tuple[str, str], data: Any):
         path = self._get_path(name, runhash)
         path.parent.mkdir(parents=True, exist_ok=True)
         for product_type in self.product_types:
@@ -235,7 +238,7 @@ class Context:
                 break
         _logger.debug(f'Product has been saved as "{path}"')
 
-    def get_runhash(self, module, condition=None):
+    def get_runhash(self, module: Module, condition: Optional[Dict[str, Any]]=None) -> Tuple[str, str]:
         if condition is None:
             condition = {}
         # Get runhashes from upstream modules
@@ -263,7 +266,7 @@ class Context:
         return module.name, h.hexdigest()
 
 
-    def run(self, module, condition=None):
+    def run(self, module: Module, condition: Optional[Dict[str, Any]]=None) -> Tuple[Any]:
         _logger.debug(f'Running module "{module.name}"')
         if condition is None:
             condition = {}
@@ -299,7 +302,7 @@ class Context:
         # Return products
         return products
 
-    def compute(self, name, condition=None):
+    def compute(self, name: str, condition: Optional[Dict[str, Any]]=None) -> Any:
         if condition is None:
             condition = {}
         module = self._producer[name]
@@ -307,7 +310,7 @@ class Context:
         products = self.run(module, condition)
         return products[i]
 
-    def depgraph(self):
+    def depgraph(self) -> Digraph:
         dot = Digraph(node_attr=dict(fontname='monospace', margin='0,0.08'))
         product_ids = {}
         for i, mod in enumerate(self._modules):
