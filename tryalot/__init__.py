@@ -371,7 +371,7 @@ try:
     class TorchTensorProductType(ProductType):
         @staticmethod
         def file_ext() -> str:
-            return '.pt.zst'
+            return '.pt'
 
         @staticmethod
         def match(data: Any) -> bool:
