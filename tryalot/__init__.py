@@ -16,7 +16,7 @@ from graphviz import Digraph
 import zstandard as zstd
 
 
-__version__ = '0.3.15'
+__version__ = '0.4.0'
 
 
 _logger = logging.getLogger(__name__)
