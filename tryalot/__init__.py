@@ -146,7 +146,7 @@ class AnyProductType(ProductType):
 
     @staticmethod
     def dump(data: Any, path: PathLike):
-        with zstd_open_write(path, level=19, threads=-1) as f:
+        with zstd_open_write(path, level=3, threads=-1) as f:
             pickle.dump(data, f, protocol=4)
 
 
