@@ -354,7 +354,7 @@ def test_torch_tensor_product_type(tmp_path):
     from pathlib import Path
     runhash = ctx.get_runhash(process)
     path = ctx._get_path('output', runhash)
-    assert Path(path.parent, path.name + '.pt.zst').is_file()
+    assert Path(path.parent, path.name + '.pt').is_file()
     loaded_product = ctx._get('output', runhash)
     assert torch.equal(loaded_product, product)
 
