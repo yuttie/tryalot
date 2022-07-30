@@ -366,33 +366,6 @@ except ModuleNotFoundError:
 
 
 try:
-    import holoviews
-
-    class HoloviewsElementProductType(ProductType):
-        @staticmethod
-        def file_ext() -> str:
-            return '.holoviews-pickle.zst'
-
-        @staticmethod
-        def match(data: Any) -> bool:
-            return isinstance(data, holoviews.core.element.Element)
-
-        @staticmethod
-        def load(path: Path) -> Any:
-            with zstd_open_read(path) as f:
-                return holoviews.Store.load(f)
-
-        @staticmethod
-        def dump(data: Any, path: Path):
-            with zstd_open_write(path, level=19, threads=-1) as f:
-                holoviews.Store.dump(data, f, protocol=4)
-
-    Context.product_types.insert(-1, HoloviewsElementProductType)
-except ModuleNotFoundError:
-    pass
-
-
-try:
     import torch
 
     class TorchTensorProductType(ProductType):
