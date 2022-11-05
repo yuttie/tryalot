@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "tryalot"
-version = "0.4.1"
+version = "0.4.2"
 description = "Try a lot without worrying about the hassle."
 authors = ["Yuta Taniguchi <yuta.taniguchi.y.t@gmail.com>"]
 license = "MIT"
@@ -10,7 +10,7 @@ repository = "https://github.com/yuttie/tryalot"
 
 [tool.poetry.dependencies]
 python = "^3.8"
-zstandard = "^0.16.0"
+zstandard = ">=0.16.0, <0.20"
 graphviz = ">=0.19, <0.21"
 
 [tool.poetry.dev-dependencies]
