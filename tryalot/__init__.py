@@ -54,7 +54,7 @@ class HashSink:
 
 def _hash(x: Any) -> bytes:
     sink = HashSink()
-    pickle.dump(x, sink, protocol=4)
+    pickle.dump(x, sink)
     return sink.digest()
 
 
@@ -147,7 +147,7 @@ class AnyProductType(ProductType):
     @staticmethod
     def dump(data: Any, path: PathLike):
         with zstd_open_write(path, level=3, threads=-1) as f:
-            pickle.dump(data, f, protocol=4)
+            pickle.dump(data, f)
 
 
 class Context:
@@ -383,7 +383,7 @@ try:
 
         @staticmethod
         def dump(data: Any, path: Path):
-            torch.save(data, path, pickle_protocol=4)
+            torch.save(data, path)
 
     Context.product_types.insert(-1, TorchTensorProductType)
 except ModuleNotFoundError:
