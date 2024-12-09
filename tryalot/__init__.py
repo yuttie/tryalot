@@ -23,7 +23,7 @@ _logger = logging.getLogger(__name__)
 
 
 @contextlib.contextmanager
-def zstd_open_write(path: PathLike, *args, **kwargs) -> Generator[Any, None, None]:  # FIXME: ZstdCompressionWriter is actually returned instead of Any but it is not exported from zstandard
+def zstd_open_write(path: PathLike, *args, **kwargs) -> Generator[zstd.ZstdCompressionWriter, None, None]:
     with open(path, 'wb') as f:
         cctx = zstd.ZstdCompressor(*args, **kwargs)
         with cctx.stream_writer(f) as comp:
