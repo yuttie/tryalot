@@ -1,4 +1,5 @@
 import tryalot
+import pytest
 
 
 def test_zstd_open_short(tmp_path):
@@ -120,7 +121,8 @@ def test_class_module_runhash(tmp_path):
             super().__init__([], ['output'], 2)
         def execute(self):
             return 2
-    ctx.register_modules(Process())
+    with pytest.warns(UserWarning, match='Producer for "output" is already registered'):
+        ctx.register_modules(Process())
 
     output2 = ctx.compute('output')
     runhash2 = ctx.get_runhash(Process())
@@ -130,7 +132,8 @@ def test_class_module_runhash(tmp_path):
             super().__init__([], ['output'], 1)
         def execute(self):
             return 1
-    ctx.register_modules(Process())
+    with pytest.warns(UserWarning, match='Producer for "output" is already registered'):
+        ctx.register_modules(Process())
 
     output3 = ctx.compute('output')
     runhash3 = ctx.get_runhash(Process())
@@ -151,16 +154,18 @@ def test_func_module_runhash(tmp_path):
     output1 = ctx.compute('output')
     runhash1 = ctx.get_runhash(process)
 
-    @ctx.module(input=[], output=['output'], version=2)
-    def process():
-        return 2
+    with pytest.warns(UserWarning, match='Producer for "output" is already registered'):
+        @ctx.module(input=[], output=['output'], version=2)
+        def process():
+            return 2
 
     output2 = ctx.compute('output')
     runhash2 = ctx.get_runhash(process)
 
-    @ctx.module(input=[], output=['output'], version=1)
-    def process():
-        return 1
+    with pytest.warns(UserWarning, match='Producer for "output" is already registered'):
+        @ctx.module(input=[], output=['output'], version=1)
+        def process():
+            return 1
 
     output3 = ctx.compute('output')
     runhash3 = ctx.get_runhash(process)
