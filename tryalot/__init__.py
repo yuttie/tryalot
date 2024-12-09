@@ -166,7 +166,7 @@ class Context:
             self._modules.append(mod)
             for name in mod.output_names:
                 if name in self._producer:
-                    warnings.warn(f'Producer for "{name}" is already registered')
+                    warnings.warn(f'Producer for "{name}" is already registered', UserWarning)
                 self._producer[name] = mod
             _logger.debug(f'Module "{mod.name}" has been registered')
 
