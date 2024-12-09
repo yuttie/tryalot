@@ -383,6 +383,7 @@ try:
 
         @staticmethod
         def dump(data: Any, path: Path):
+            # NOTE No zstd compression because torch.load() requires a file that is seekable
             torch.save(data, path)
 
     Context.product_types.insert(-1, TorchTensorProductType)
