@@ -379,7 +379,7 @@ try:
 
         @staticmethod
         def load(path: Path) -> Any:
-            return torch.load(path)
+            return torch.load(path, weights_only=True)
 
         @staticmethod
         def dump(data: Any, path: Path):
